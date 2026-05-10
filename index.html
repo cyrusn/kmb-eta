@@ -145,23 +145,65 @@
                 </template>
             </div>
 
-            <!-- Empty State -->
-            <div x-show="!selectedUser" class="has-text-centered py-6">
-                <div class="box is-inline-block" style="max-width: 500px;">
-                    <p class="is-size-5 mb-4">📍 No bus stops selected</p>
-                    <p class="mb-5">Select a user from the dropdown above, or enter a bus stop code below to start.</p>
-                    
-                    <div class="field has-addons has-addons-centered">
-                        <div class="control">
-                            <input class="input" type="text" placeholder="e.g. KT108" x-model="newStopCode" @keyup.enter="addStop(newStopCode)">
+            <!-- Empty State / Manual -->
+            <div x-show="!selectedUser" class="columns is-centered py-6" x-cloak>
+                <div class="column is-8-tablet is-6-desktop">
+                    <div class="box">
+                        <h2 class="title is-4 has-text-centered">📖 How to Use</h2>
+                        
+                        <div class="content">
+                            <ol>
+                                <li><strong>Select a User:</strong> Use the dropdown at the top to load a pre-configured list of bus stops.</li>
+                                <li><strong>Search for Stops:</strong> Use the search box below to find a bus stop by name (Chinese or English).</li>
+                                <li><strong>Enter Stop Code:</strong> If you know the specific code (e.g., <code>KT108</code>), enter it directly.</li>
+                                <li><strong>Filter Routes:</strong> Click the route tags (e.g., <code>290A</code>) to show only those buses. Click <code>...</code> to see all routes at a stop.</li>
+                                <li><strong>Share:</strong> The URL updates automatically. You can bookmark or share the link to save your custom view!</li>
+                            </ol>
                         </div>
-                        <div class="control">
-                            <button class="button is-primary" @click="addStop(newStopCode)">
-                                Add Stop
-                            </button>
+
+                        <hr>
+
+                        <h3 class="subtitle is-5">🔍 Find a Bus Stop</h3>
+                        
+                        <!-- Search by Name -->
+                        <div class="field mb-4">
+                            <label class="label is-small">Search by Name (TC/SC/EN):</label>
+                            <div class="control has-icons-left">
+                                <input class="input" type="text" placeholder="e.g. Millennium City, 創紀之城..." x-model="stopSearchQuery">
+                                <span class="icon is-small is-left">🔍</span>
+                            </div>
+                        </div>
+
+                        <!-- Search Results -->
+                        <div class="mb-5" x-show="stopSearchQuery.length >= 2">
+                            <div class="panel">
+                                <p class="panel-heading is-size-7">Search Results</p>
+                                <template x-for="s in getFilteredStops()" :key="s.stop">
+                                    <a class="panel-block is-flex is-justify-content-space-between" @click="addStop(getStopCode(s))">
+                                        <span x-text="s.name_tc"></span>
+                                        <span class="tag is-info is-light" x-text="getStopCode(s)"></span>
+                                    </a>
+                                </template>
+                                <div class="panel-block has-text-grey is-size-7" x-show="getFilteredStops().length === 0">
+                                    No stops found matching your search.
+                                </div>
+                            </div>
+                        </div>
+
+                        <p class="has-text-centered has-text-grey is-size-7 mb-3">-- OR --</p>
+
+                        <!-- Add by Code -->
+                        <div class="field has-addons has-addons-centered">
+                            <div class="control is-expanded">
+                                <input class="input" type="text" placeholder="Enter Stop Code (e.g. KT108)" x-model="newStopCode" @keyup.enter="addStop(newStopCode)">
+                            </div>
+                            <div class="control">
+                                <button class="button is-primary" @click="addStop(newStopCode)">
+                                    Add
+                                </button>
+                            </div>
                         </div>
                     </div>
-                    <p class="is-size-7 has-text-grey mt-2">Example codes: KT108, TK576, KT193</p>
                 </div>
             </div>
         </div>
@@ -174,6 +216,8 @@
                 selectedUsername: '',
                 selectedUser: null,
                 newStopCode: '',
+                stopSearchQuery: '',
+                allStopsList: [],
                 urlRouteFilter: [],
                 etaData: {},
                 stopNames: {},
@@ -189,10 +233,11 @@
                         // 1. Fetch all stops to build code -> id mapping
                         const stopsResp = await fetch('https://data.etabus.gov.hk/v1/transport/kmb/stop');
                         const stopsJson = await stopsResp.json();
+                        this.allStopsList = stopsJson.data;
                         this.stopIdMap = {}; // code -> id
                         this.stopDataMap = {}; // id -> full data
                         
-                        stopsJson.data.forEach(s => {
+                        this.allStopsList.forEach(s => {
                             this.stopDataMap[s.stop] = s;
                             // Extract code from name_en or name_tc, e.g. "NAME (CODE)" or "NAME（CODE）"
                             const match = (s.name_en || s.name_tc).match(/[\(（](.*?)[\)）]\s*$/);
@@ -268,6 +313,22 @@
                     if (stop.id) return stop.id;
                     if (stop.code) return this.stopIdMap[stop.code];
                     return null;
+                },
+
+                getStopCode(s) {
+                    const match = (s.name_en || s.name_tc).match(/[\(（](.*?)[\)）]\s*$/);
+                    return match ? match[1].trim() : null;
+                },
+
+                getFilteredStops() {
+                    const query = this.stopSearchQuery.trim().toLowerCase();
+                    if (!query || query.length < 2) return [];
+                    
+                    return this.allStopsList.filter(s => {
+                        return (s.name_tc && s.name_tc.toLowerCase().includes(query)) ||
+                               (s.name_en && s.name_en.toLowerCase().includes(query)) ||
+                               (s.name_sc && s.name_sc.toLowerCase().includes(query));
+                    }).slice(0, 10); // Limit to top 10 results for performance
                 },
 
                 getAvailableRoutesForStop(stop) {
