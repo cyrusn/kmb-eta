@@ -32,7 +32,7 @@
                     </div>
                     <div class="navbar-item">
                         <div class="buttons">
-                            <button class="button" @click="showManual = true" title="Setup & Help">
+                            <button class="button" @click="openManual()" title="Setup & Help">
                                 <span class="icon">ℹ️</span>
                             </button>
                             <button class="button" @click="toggleTheme()" title="Toggle Light/Dark Mode">
@@ -58,7 +58,7 @@
 
                 <template x-for="stopGroup in getGroupedStops()" :key="stopGroup.baseName">
                     <div :id="stopGroup.originalIds.join('-')" class="card mb-5">
-                        <header class="card-header" :class="theme === 'light' ? 'has-background-warning-light' : 'has-background-warning-dark'">
+                        <header class="card-header is-clickable" @click="moveGroupToTop(stopGroup)" :class="theme === 'light' ? 'has-background-warning-light' : 'has-background-warning-dark'">
                             <p class="card-header-title">
                                 <span class="icon mr-2">📍</span>
                                 <span x-text="stopGroup.baseName"></span>
@@ -106,8 +106,8 @@
                                                         <a :href="'https://search.kmb.hk/KMBWebSite/?action=routesearch&route=' + group.route" target="_blank" rel="noopener noreferrer">
                                                             <span class="tag is-medium is-clickable is-link" :class="theme === 'light' ? 'is-light' : 'is-dark'" x-text="group.route"></span>
                                                         </a>
-                                                        <template x-if="group.service_type === 2">
-                                                            <span class="tag is-small ml-1" :class="theme === 'light' ? 'is-warning is-light' : 'is-warning is-dark'">Special</span>
+                                                        <template x-if="group.service_type > 1">
+                                                            <span class="tag is-small ml-1" :class="theme === 'light' ? 'is-warning is-light' : 'is-warning is-dark'" title="Service Type" x-text="'#' + group.service_type"></span>
                                                         </template>
                                                     </td>
                                                     <td class="is-vcentered">
@@ -165,13 +165,15 @@
                             <div class="panel">
                                 <p class="panel-heading is-size-7">Search Results</p>
                                 <template x-for="s in getFilteredStops()" :key="s.stop">
-                                    <label class="panel-block is-flex is-justify-content-space-between is-clickable">
-                                        <div>
+                                    <div class="panel-block is-flex is-justify-content-space-between align-items-center">
+                                        <label class="is-clickable mb-0 is-flex align-items-center">
                                             <input type="checkbox" :value="getStopCode(s)" x-model="selectedSearchStops" class="mr-2">
+                                        </label>
+                                        <div class="is-flex-grow-1 is-clickable" @click="if(!selectedSearchStops.includes(getStopCode(s))) { selectedSearchStops.push(getStopCode(s)); } else { selectedSearchStops = selectedSearchStops.filter(c => c !== getStopCode(s)); }">
                                             <span x-text="s.name_tc"></span>
                                         </div>
-                                        <span class="tag is-info is-light" x-text="getStopCode(s)"></span>
-                                    </label>
+                                        <span class="tag is-info is-light is-clickable" x-text="getStopCode(s)" @click="if(!selectedSearchStops.includes(getStopCode(s))) { selectedSearchStops.push(getStopCode(s)); } else { selectedSearchStops = selectedSearchStops.filter(c => c !== getStopCode(s)); }"></span>
+                                    </div>
                                 </template>
                                 <div class="panel-block has-text-grey is-size-7" x-show="getFilteredStops().length === 0">
                                     No stops found matching your search.
@@ -319,9 +321,7 @@
                     if (!stopId) return [];
                     const data = this.etaData[stopId] || [];
                     data.forEach(item => {
-                        if (item.service_type === 1 || item.service_type === 2) {
-                            routes.add(item.route);
-                        }
+                        routes.add(item.route);
                     });
                     return Array.from(routes).sort((a, b) => a.localeCompare(b, undefined, {numeric: true, sensitivity: 'base'}));
                 },
@@ -416,7 +416,6 @@
                     // Prevent duplicate stops
                     if (this.selectedUser.stops.some(s => (s.code || s.id) === stopCode)) {
                         this.newStopCode = '';
-                        this.scrollToStop(stopCode);
                         return;
                     }
 
@@ -425,33 +424,69 @@
                     this.updateUrl();
                     this.refreshAll();
                     this.startTimers();
-                    this.scrollToStop(stopCode);
+                },
+
+                openManual() {
+                    if (this.selectedUser && this.selectedUser.stops) {
+                        this.selectedSearchStops = this.selectedUser.stops.map(s => s.code || s.id);
+                    } else {
+                        this.selectedSearchStops = [];
+                    }
+                    this.showManual = true;
                 },
 
                 createLinkFromSelection() {
-                    if (this.selectedSearchStops.length === 0) return;
-                    if (!this.selectedUser) {
-                        this.selectedUser = { stops: [] };
-                    }
-                    
-                    const firstNewCode = this.selectedSearchStops[0];
+                    const newStops = [];
                     
                     this.selectedSearchStops.forEach(code => {
-                         if (!this.selectedUser.stops.some(s => (s.code || s.id) === code)) {
-                             this.selectedUser.stops.push({ code: code, routes: [] });
+                         // Preserve existing stop configuration if it was already selected
+                         const existingStop = this.selectedUser && this.selectedUser.stops 
+                             ? this.selectedUser.stops.find(s => (s.code || s.id) === code)
+                             : null;
+                         
+                         if (existingStop) {
+                             newStops.push(existingStop);
+                         } else {
+                             newStops.push({ code: code, routes: [] });
                          }
                     });
+                    
+                    if (newStops.length > 0) {
+                        this.selectedUser = { stops: newStops };
+                        this.showManual = false;
+                        window.scrollTo({top: 0, behavior: 'smooth'});
+                    } else {
+                        this.selectedUser = null; // Reverts back to empty state
+                    }
                     
                     this.selectedSearchStops = [];
                     this.stopSearchQuery = '';
                     this.updateUrl();
                     this.refreshAll();
                     this.startTimers();
-                    this.showManual = false;
+                },
+
+                moveGroupToTop(stopGroup) {
+                    if (!this.selectedUser || !this.selectedUser.stops) return;
                     
-                    if (firstNewCode) {
-                        this.scrollToStop(firstNewCode);
-                    }
+                    // Identify the stops in this group
+                    const stopsInGroup = stopGroup.stops;
+                    
+                    // Reorder: Move these stops to the front of the array
+                    const otherStops = this.selectedUser.stops.filter(s => !stopsInGroup.includes(s));
+                    this.selectedUser.stops = [...stopsInGroup, ...otherStops];
+                    
+                    // Update the URL to persist the new order
+                    this.updateUrl();
+                    
+                    // Scroll so the header of this card is at the very top of the viewport
+                    this.$nextTick(() => {
+                        const cardId = stopGroup.originalIds.join('-');
+                        const element = document.getElementById(cardId);
+                        if (element) {
+                            element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                        }
+                    });
                 },
 
                 startTimers() {
@@ -576,9 +611,8 @@
                         if (!stopId) continue;
                         const data = this.etaData[stopId] || [];
                         
-                        // Filter by service_type 1 and 2, by specific routes if defined, AND ensure 'eta' exists
+                        // Filter by specific routes if defined, AND ensure 'eta' exists
                         const filtered = data.filter(item => {
-                            const isValidService = item.service_type === 1 || item.service_type === 2;
                             let isRequestedRoute = stop.routes && stop.routes.length > 0 
                                 ? stop.routes.includes(item.route.toUpperCase()) 
                                 : true;
@@ -589,13 +623,32 @@
                             }
 
                             const hasEtaTime = item.eta !== null && item.eta !== '';
-                            return isValidService && isRequestedRoute && hasEtaTime;
+                            return isRequestedRoute && hasEtaTime;
                         });
                         allFiltered = allFiltered.concat(filtered);
                     }
                     
-                    const grouped = {};
+                    // Deduplicate by Route + Destination + EXACT ETA time across all stops.
+                    // If multiple service types have the exact same ETA, keep only the one with the smallest service_type.
+                    const uniqueEtasMap = new Map();
+                    
                     allFiltered.forEach(eta => {
+                        // Key includes exact timestamp to catch same-time arrivals
+                        const uniqueKey = `${eta.route}_${eta.dest_tc}_${eta.eta}`;
+                        
+                        if (!uniqueEtasMap.has(uniqueKey)) {
+                            uniqueEtasMap.set(uniqueKey, eta);
+                        } else {
+                            const existing = uniqueEtasMap.get(uniqueKey);
+                            if (eta.service_type < existing.service_type) {
+                                uniqueEtasMap.set(uniqueKey, eta);
+                            }
+                        }
+                    });
+
+                    // Now group the unique ETAs by Route + Destination + Service Type for display
+                    const grouped = {};
+                    Array.from(uniqueEtasMap.values()).forEach(eta => {
                         const key = `${eta.route}_${eta.dest_tc}_${eta.service_type}`;
                         if (!grouped[key]) {
                             grouped[key] = {
@@ -613,17 +666,8 @@
                         .sort((a, b) => a.route.localeCompare(b.route, undefined, {numeric: true, sensitivity: 'base'}));
                     
                     result.forEach(group => {
-                        // Remove duplicates by exact ETA time across merged stops
-                        const uniqueEtas = [];
-                        const seenTimes = new Set();
-                        
-                        group.etas.sort((a, b) => new Date(a.eta) - new Date(b.eta)).forEach(eta => {
-                            if (!seenTimes.has(eta.eta)) {
-                                seenTimes.add(eta.eta);
-                                uniqueEtas.push(eta);
-                            }
-                        });
-                        group.etas = uniqueEtas;
+                        // Sort ETAs within the group chronologically
+                        group.etas.sort((a, b) => new Date(a.eta) - new Date(b.eta));
                     });
 
                     return result;
