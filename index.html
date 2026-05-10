@@ -151,7 +151,7 @@
             </div>
 
             <!-- Empty State / Manual Modal -->
-            <div class="modal" :class="{'is-active': !selectedUser || showManual}" x-cloak>
+            <div class="modal" :class="{'is-active': !selectedUser || showManual}" x-cloak @keydown.window.escape="if(selectedUser) showManual = false">
                 <div class="modal-background" @click="if(selectedUser) showManual = false"></div>
                 <div class="modal-card" style="max-height: 90vh;">
                     <header class="modal-card-head">
@@ -164,9 +164,9 @@
                         
                         <!-- Search by Name -->
                         <div class="field mb-4">
-                            <label class="label is-small">Search by Name (TC/SC/EN):</label>
+                            <label class="label is-small">Search by Name or Code:</label>
                             <div class="control has-icons-left">
-                                <input class="input" type="text" placeholder="e.g. Millennium City, 創紀之城..." x-model="stopSearchQuery">
+                                <input class="input" type="text" placeholder="e.g. Millennium City, 創紀之城, KT108..." x-model="stopSearchQuery">
                                 <span class="icon is-small is-left">🔍</span>
                             </div>
                         </div>
@@ -206,33 +206,19 @@
                             </button>
                         </div>
 
-                        <p class="has-text-centered has-text-grey is-size-7 mb-3">-- OR --</p>
-
-                        <!-- Add by Code -->
-                        <div class="field has-addons has-addons-centered mb-5">
-                            <div class="control is-expanded">
-                                <input class="input" type="text" placeholder="Enter Stop Code (e.g. KT108)" x-model="newStopCode" @keyup.enter="addStop(newStopCode); showManual = false;">
-                            </div>
-                            <div class="control">
-                                <button class="button is-primary" @click="addStop(newStopCode); showManual = false;">
-                                    Add By Code
-                                </button>
-                            </div>
-                        </div>
-
                         <hr>
 
                         <h2 class="title is-5 mt-5">📖 How to Use</h2>
-                        <div class="content is-small">
+                        <div class="content is-medium">
                             <ol>
                                 <li><strong>Select a User:</strong> Use the dropdown at the top to load a pre-configured list of bus stops.</li>
                                 <li><strong>Add Stops:</strong> Use the search box above to find and add stops to your dashboard.</li>
                                 <li><strong>Filter Routes:</strong> Click the route tags (e.g., <code>290A</code>) to show only those buses. Click <code>...</code> to see all routes at a stop.</li>
                                 <li><strong>Share & Custom Links:</strong> The URL updates automatically, so you can just bookmark it! You can also manually create links:
                                     <ul>
-                                        <li><strong>Multiple Stops:</strong> Add multiple <code>stops=</code> parameters. <br><span class="has-text-grey">Example:</span> <code>?stops=KT108&stops=KT193</code></li>
-                                        <li><strong>Filter Routes:</strong> Add <code>:</code> after the stop code, followed by routes separated by <code>+</code>. <br><span class="has-text-grey">Example:</span> <code>?stops=KT108:290A+290X</code></li>
-                                        <li><strong>Combine them:</strong> <br><span class="has-text-grey">Example:</span> <code>?stops=KT108:290A&stops=KT193:290A+290X</code></li>
+                                        <li><strong>Multiple Stops:</strong> Add multiple <code>stops=</code> parameters. <br><span class="has-text-grey is-size-6">Example:</span> <code class="is-size-6">?stops=KT108&stops=KT193</code></li>
+                                        <li><strong>Filter Routes:</strong> Add <code>:</code> after the stop code, followed by routes separated by <code>+</code>. <br><span class="has-text-grey is-size-6">Example:</span> <code class="is-size-6">?stops=KT108:290A+290X</code></li>
+                                        <li><strong>Combine them:</strong> <br><span class="has-text-grey is-size-6">Example:</span> <code class="is-size-6">?stops=KT108:290A&stops=KT193:290A+290X</code></li>
                                     </ul>
                                 </li>
                             </ol>
@@ -361,9 +347,11 @@
                     if (!query || query.length < 2) return [];
                     
                     return this.allStopsList.filter(s => {
+                        const code = (this.getStopCode(s) || '').toLowerCase();
                         return (s.name_tc && s.name_tc.toLowerCase().includes(query)) ||
                                (s.name_en && s.name_en.toLowerCase().includes(query)) ||
-                               (s.name_sc && s.name_sc.toLowerCase().includes(query));
+                               (s.name_sc && s.name_sc.toLowerCase().includes(query)) ||
+                               code.includes(query);
                     }).slice(0, 10); // Limit to top 10 results for performance
                 },
 
