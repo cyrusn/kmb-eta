@@ -17,20 +17,26 @@
 <body>
     <section class="section" x-data="busApp()" x-init="init()">
         <div class="container">
-            <div class="box is-flex is-align-items-center is-justify-content-space-between mb-6">
-                <div>
-                    <h1 class="title">🚌 KMB Bus ETA</h1>
-                    <p class="subtitle">Real-time arrival information for your routes</p>
+            <nav class="navbar mb-6" role="navigation" aria-label="main navigation" style="background: transparent; border-bottom: 1px solid var(--bulma-border);">
+                <div class="navbar-brand" style="width: 100%;">
+                    <div class="navbar-item" style="flex-grow: 1;">
+                        <div>
+                            <h1 class="title is-4 mb-1">🚌 KMB Bus ETA</h1>
+                            <p class="subtitle is-6 mb-0 is-hidden-mobile">Real-time arrival information for your routes</p>
+                        </div>
+                    </div>
+                    <div class="navbar-item">
+                        <div class="buttons">
+                            <button class="button" @click="showManual = true" title="Setup & Help">
+                                <span class="icon">ℹ️</span>
+                            </button>
+                            <button class="button" @click="toggleTheme()" title="Toggle Light/Dark Mode">
+                                <span class="icon" x-text="theme === 'light' ? '🌙' : '☀️'"></span>
+                            </button>
+                        </div>
+                    </div>
                 </div>
-                <div class="buttons">
-                    <button class="button" @click="showManual = true" title="Setup & Help">
-                        <span class="icon">ℹ️</span>
-                    </button>
-                    <button class="button" @click="toggleTheme()" title="Toggle Light/Dark Mode">
-                        <span class="icon" x-text="theme === 'light' ? '🌙' : '☀️'"></span>
-                    </button>
-                </div>
-            </div>
+            </nav>
 
             <!-- Dashboard Content -->
             <div x-show="selectedUser && !showManual" x-cloak>
