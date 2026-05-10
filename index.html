@@ -277,7 +277,7 @@
                     document.documentElement.setAttribute('data-theme', this.theme);
                     try {
                         // 1. Fetch all stops to build code -> id mapping
-                        const stopsResp = await fetch('https://data.etabus.gov.hk/v1/transport/kmb/stop');
+                        const stopsResp = await fetch('https://data.etabus.gov.hk/v1/transport/kmb/stop/');
                         const stopsJson = await stopsResp.json();
                         this.allStopsList = stopsJson.data;
                         this.stopIdMap = {}; // code -> id
@@ -294,7 +294,7 @@
                         });
 
                         // 2. Fetch all routes for quick bound lookup later
-                        const routesResp = await fetch('https://data.etabus.gov.hk/v1/transport/kmb/route');
+                        const routesResp = await fetch('https://data.etabus.gov.hk/v1/transport/kmb/route/');
                         const routesJson = await routesResp.json();
                         this.allRoutesList = routesJson.data;
 
