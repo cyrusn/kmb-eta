@@ -36,7 +36,6 @@
             <div x-show="selectedUser && !showManual" x-cloak>
                 <div class="level is-mobile mb-4">
                     <div class="level-left">
-                        <h2 class="title is-4">My Custom Stops</h2>
                     </div>
                     <div class="level-right">
                         <p class="last-updated is-size-7">
@@ -130,15 +129,14 @@
             </div>
 
             <!-- Setup / Manual Page -->
-            <div class="columns is-centered py-6" x-show="!selectedUser || showManual" x-cloak @keydown.window.escape="if(selectedUser) showManual = false">
-                <div class="column is-8-tablet is-6-desktop">
-                    <div class="box">
-                        <div class="is-flex is-align-items-center is-justify-content-space-between mb-4">
-                            <h2 class="title is-4 m-0">🚌 Setup & Help</h2>
-                            <button class="button is-small is-light" x-show="selectedUser" @click="showManual = false">
-                                <span>← Back</span>
-                            </button>
-                        </div>
+            <div class="py-2" x-show="!selectedUser || showManual" x-cloak @keydown.window.escape="if(selectedUser) showManual = false">
+                <div class="box">
+                    <div class="is-flex is-align-items-center is-justify-content-space-between mb-4">
+                        <h2 class="title is-4 m-0">🚌 Setup & Help</h2>
+                        <button class="button is-small is-light" x-show="selectedUser" @click="showManual = false">
+                            <span>← Back</span>
+                        </button>
+                    </div>
                         
                         <h3 class="subtitle is-5 mb-3">🔍 Find & Add Bus Stops</h3>
                         
@@ -205,8 +203,7 @@
                     </div>
                 </div>
             </div>
-        </div>
-    </section>
+        </section>
 
     <script>
         function busApp() {
