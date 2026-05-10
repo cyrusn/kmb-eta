@@ -157,7 +157,13 @@
                                 <li><strong>Search for Stops:</strong> Use the search box below to find a bus stop by name (Chinese or English).</li>
                                 <li><strong>Enter Stop Code:</strong> If you know the specific code (e.g., <code>KT108</code>), enter it directly.</li>
                                 <li><strong>Filter Routes:</strong> Click the route tags (e.g., <code>290A</code>) to show only those buses. Click <code>...</code> to see all routes at a stop.</li>
-                                <li><strong>Share:</strong> The URL updates automatically. You can bookmark or share the link to save your custom view!</li>
+                                <li><strong>Share & Custom Links:</strong> The URL updates automatically, so you can just bookmark it! You can also manually create links:
+                                    <ul>
+                                        <li><strong>Multiple Stops:</strong> Add multiple <code>stops=</code> parameters. <br><span class="has-text-grey">Example:</span> <code>?stops=KT108&stops=KT193</code></li>
+                                        <li><strong>Filter Routes:</strong> Add <code>:</code> after the stop code, followed by routes separated by <code>+</code>. <br><span class="has-text-grey">Example:</span> <code>?stops=KT108:290A+290X</code></li>
+                                        <li><strong>Combine them:</strong> <br><span class="has-text-grey">Example:</span> <code>?stops=KT108:290A&stops=KT193:290A+290X</code></li>
+                                    </ul>
+                                </li>
                             </ol>
                         </div>
 
