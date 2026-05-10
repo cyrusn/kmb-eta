@@ -22,9 +22,14 @@
                     <h1 class="title">🚌 KMB Bus ETA</h1>
                     <p class="subtitle">Real-time arrival information for your routes</p>
                 </div>
-                <button class="button" @click="toggleTheme()" title="Toggle Light/Dark Mode">
-                    <span class="icon" x-text="theme === 'light' ? '🌙' : '☀️'"></span>
-                </button>
+                <div class="buttons">
+                    <button class="button" @click="showManual = true" title="Setup & Help">
+                        <span class="icon">ℹ️</span>
+                    </button>
+                    <button class="button" @click="toggleTheme()" title="Toggle Light/Dark Mode">
+                        <span class="icon" x-text="theme === 'light' ? '🌙' : '☀️'"></span>
+                    </button>
+                </div>
             </div>
 
             <!-- User Selection -->
@@ -145,31 +150,17 @@
                 </template>
             </div>
 
-            <!-- Empty State / Manual -->
-            <div x-show="!selectedUser" class="columns is-centered py-6" x-cloak>
-                <div class="column is-8-tablet is-6-desktop">
-                    <div class="box">
-                        <h2 class="title is-4 has-text-centered">📖 How to Use</h2>
+            <!-- Empty State / Manual Modal -->
+            <div class="modal" :class="{'is-active': !selectedUser || showManual}" x-cloak>
+                <div class="modal-background" @click="if(selectedUser) showManual = false"></div>
+                <div class="modal-card" style="max-height: 90vh;">
+                    <header class="modal-card-head">
+                        <p class="modal-card-title">🚌 Setup & Help</p>
+                        <button class="delete" aria-label="close" x-show="selectedUser" @click="showManual = false"></button>
+                    </header>
+                    <section class="modal-card-body">
                         
-                        <div class="content">
-                            <ol>
-                                <li><strong>Select a User:</strong> Use the dropdown at the top to load a pre-configured list of bus stops.</li>
-                                <li><strong>Search for Stops:</strong> Use the search box below to find a bus stop by name (Chinese or English).</li>
-                                <li><strong>Enter Stop Code:</strong> If you know the specific code (e.g., <code>KT108</code>), enter it directly.</li>
-                                <li><strong>Filter Routes:</strong> Click the route tags (e.g., <code>290A</code>) to show only those buses. Click <code>...</code> to see all routes at a stop.</li>
-                                <li><strong>Share & Custom Links:</strong> The URL updates automatically, so you can just bookmark it! You can also manually create links:
-                                    <ul>
-                                        <li><strong>Multiple Stops:</strong> Add multiple <code>stops=</code> parameters. <br><span class="has-text-grey">Example:</span> <code>?stops=KT108&stops=KT193</code></li>
-                                        <li><strong>Filter Routes:</strong> Add <code>:</code> after the stop code, followed by routes separated by <code>+</code>. <br><span class="has-text-grey">Example:</span> <code>?stops=KT108:290A+290X</code></li>
-                                        <li><strong>Combine them:</strong> <br><span class="has-text-grey">Example:</span> <code>?stops=KT108:290A&stops=KT193:290A+290X</code></li>
-                                    </ul>
-                                </li>
-                            </ol>
-                        </div>
-
-                        <hr>
-
-                        <h3 class="subtitle is-5">🔍 Find a Bus Stop</h3>
+                        <h3 class="subtitle is-5 mb-3">🔍 Find & Add Bus Stops</h3>
                         
                         <!-- Search by Name -->
                         <div class="field mb-4">
@@ -180,15 +171,18 @@
                             </div>
                         </div>
 
-                        <!-- Search Results -->
+                        <!-- Search Results with Checkboxes -->
                         <div class="mb-5" x-show="stopSearchQuery.length >= 2">
                             <div class="panel">
                                 <p class="panel-heading is-size-7">Search Results</p>
                                 <template x-for="s in getFilteredStops()" :key="s.stop">
-                                    <a class="panel-block is-flex is-justify-content-space-between" @click="addStop(getStopCode(s))">
-                                        <span x-text="s.name_tc"></span>
+                                    <label class="panel-block is-flex is-justify-content-space-between is-clickable">
+                                        <div>
+                                            <input type="checkbox" :value="getStopCode(s)" x-model="selectedSearchStops" class="mr-2">
+                                            <span x-text="s.name_tc"></span>
+                                        </div>
                                         <span class="tag is-info is-light" x-text="getStopCode(s)"></span>
-                                    </a>
+                                    </label>
                                 </template>
                                 <div class="panel-block has-text-grey is-size-7" x-show="getFilteredStops().length === 0">
                                     No stops found matching your search.
@@ -196,20 +190,54 @@
                             </div>
                         </div>
 
+                        <!-- Selected Stops Preview -->
+                        <div class="box has-background-light mb-5" x-show="selectedSearchStops.length > 0">
+                            <p class="is-size-7 mb-2 has-text-weight-bold">Selected Stops:</p>
+                            <div class="tags">
+                                <template x-for="code in selectedSearchStops" :key="code">
+                                    <span class="tag is-primary">
+                                        <span x-text="code"></span>
+                                        <button class="delete is-small" @click.stop="selectedSearchStops = selectedSearchStops.filter(c => c !== code)"></button>
+                                    </span>
+                                </template>
+                            </div>
+                            <button class="button is-link is-fullwidth mt-3" @click="createLinkFromSelection()">
+                                Load Stops & Create Link
+                            </button>
+                        </div>
+
                         <p class="has-text-centered has-text-grey is-size-7 mb-3">-- OR --</p>
 
                         <!-- Add by Code -->
-                        <div class="field has-addons has-addons-centered">
+                        <div class="field has-addons has-addons-centered mb-5">
                             <div class="control is-expanded">
-                                <input class="input" type="text" placeholder="Enter Stop Code (e.g. KT108)" x-model="newStopCode" @keyup.enter="addStop(newStopCode)">
+                                <input class="input" type="text" placeholder="Enter Stop Code (e.g. KT108)" x-model="newStopCode" @keyup.enter="addStop(newStopCode); showManual = false;">
                             </div>
                             <div class="control">
-                                <button class="button is-primary" @click="addStop(newStopCode)">
-                                    Add
+                                <button class="button is-primary" @click="addStop(newStopCode); showManual = false;">
+                                    Add By Code
                                 </button>
                             </div>
                         </div>
-                    </div>
+
+                        <hr>
+
+                        <h2 class="title is-5 mt-5">📖 How to Use</h2>
+                        <div class="content is-small">
+                            <ol>
+                                <li><strong>Select a User:</strong> Use the dropdown at the top to load a pre-configured list of bus stops.</li>
+                                <li><strong>Add Stops:</strong> Use the search box above to find and add stops to your dashboard.</li>
+                                <li><strong>Filter Routes:</strong> Click the route tags (e.g., <code>290A</code>) to show only those buses. Click <code>...</code> to see all routes at a stop.</li>
+                                <li><strong>Share & Custom Links:</strong> The URL updates automatically, so you can just bookmark it! You can also manually create links:
+                                    <ul>
+                                        <li><strong>Multiple Stops:</strong> Add multiple <code>stops=</code> parameters. <br><span class="has-text-grey">Example:</span> <code>?stops=KT108&stops=KT193</code></li>
+                                        <li><strong>Filter Routes:</strong> Add <code>:</code> after the stop code, followed by routes separated by <code>+</code>. <br><span class="has-text-grey">Example:</span> <code>?stops=KT108:290A+290X</code></li>
+                                        <li><strong>Combine them:</strong> <br><span class="has-text-grey">Example:</span> <code>?stops=KT108:290A&stops=KT193:290A+290X</code></li>
+                                    </ul>
+                                </li>
+                            </ol>
+                        </div>
+                    </section>
                 </div>
             </div>
         </div>
@@ -223,6 +251,8 @@
                 selectedUser: null,
                 newStopCode: '',
                 stopSearchQuery: '',
+                selectedSearchStops: [],
+                showManual: false,
                 allStopsList: [],
                 urlRouteFilter: [],
                 etaData: {},
@@ -438,6 +468,27 @@
                     this.updateUrl();
                     this.refreshAll();
                     this.startTimers();
+                },
+
+                createLinkFromSelection() {
+                    if (this.selectedSearchStops.length === 0) return;
+                    if (!this.selectedUser) {
+                        this.selectedUser = { username: 'Custom View', stops: [] };
+                        this.selectedUsername = 'Custom View';
+                    }
+                    
+                    this.selectedSearchStops.forEach(code => {
+                         if (!this.selectedUser.stops.some(s => (s.code || s.id) === code)) {
+                             this.selectedUser.stops.push({ code: code, routes: [] });
+                         }
+                    });
+                    
+                    this.selectedSearchStops = [];
+                    this.stopSearchQuery = '';
+                    this.updateUrl();
+                    this.refreshAll();
+                    this.startTimers();
+                    this.showManual = false;
                 },
 
                 onUserChange(updateUrl = true) {
