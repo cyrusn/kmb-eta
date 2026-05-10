@@ -138,7 +138,20 @@
                                                                 <span class="is-italic has-text-grey">Loading stops...</span>
                                                             </template>
                                                             <template x-if="routeStops[`${group.route}_${group.dest_tc}_${group.service_type}_${getStopId(stop)}`]">
-                                                                <div x-text="routeStops[`${group.route}_${group.dest_tc}_${group.service_type}_${getStopId(stop)}`].map(s => s.name).join(' → ') || 'End of route.'"></div>
+                                                                <div>
+                                                                    <template x-for="(s, index) in routeStops[`${group.route}_${group.dest_tc}_${group.service_type}_${getStopId(stop)}`]" :key="s.stop">
+                                                                        <span>
+                                                                            <span class="is-clickable" :class="{'has-text-weight-bold': index === 0}" @click="s.showCode = !s.showCode" x-text="s.name"></span>
+                                                                            <span x-show="s.showCode && s.code" x-text="' (' + s.code + ')'" class="has-text-grey"></span>
+                                                                            <template x-if="index < routeStops[`${group.route}_${group.dest_tc}_${group.service_type}_${getStopId(stop)}`].length - 1">
+                                                                                <span> → </span>
+                                                                            </template>
+                                                                        </span>
+                                                                    </template>
+                                                                    <template x-if="routeStops[`${group.route}_${group.dest_tc}_${group.service_type}_${getStopId(stop)}`].length === 0">
+                                                                        <span>End of route.</span>
+                                                                    </template>
+                                                                </div>
                                                             </template>
                                                         </div>
                                                     </td>
@@ -610,15 +623,20 @@
                         const currentIndex = stopList.findIndex(s => s.stop === currentStopId);
                         
                         if (currentIndex !== -1) {
-                            this.routeStops[key] = stopList.slice(currentIndex + 1).map(s => {
+                            this.routeStops[key] = stopList.slice(currentIndex).map(s => {
                                 // this.stopDataMap was populated in init() using the full /stop API
                                 const fullStopData = this.stopDataMap[s.stop];
                                 let name = fullStopData ? fullStopData.name_tc : 'Unknown Stop';
-                                // Strip the stop code in parentheses (e.g. "NAME (CODE)" -> "NAME")
+                                // Extract the stop code from name (e.g. "NAME (CODE)")
+                                const codeMatch = name.match(/[\(（](.*?)[\)）]\s*$/);
+                                const code = codeMatch ? codeMatch[1] : '';
+                                // Strip the stop code in parentheses
                                 name = name.replace(/[\(（].*?[\)）]\s*$/, '').trim();
                                 return {
                                     stop: s.stop,
-                                    name: name
+                                    name: name,
+                                    code: code,
+                                    showCode: false
                                 };
                             });
                         } else {
