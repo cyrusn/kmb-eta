@@ -22,15 +22,9 @@
                     <h1 class="title">🚌 KMB Bus ETA</h1>
                     <p class="subtitle">Real-time arrival information for your routes</p>
                 </div>
-                <div class="buttons">
-                    <button class="button" @click="toggleFilter()" :title="filterEnabled ? 'Show all routes' : 'Show filtered routes only'">
-                        <span class="icon" x-text="filterEnabled ? '🔍' : '📋'"></span>
-                        <span class="is-hidden-mobile ml-1" x-text="filterEnabled ? 'Filtered' : 'All Routes'"></span>
-                    </button>
-                    <button class="button" @click="toggleTheme()" title="Toggle Light/Dark Mode">
-                        <span class="icon" x-text="theme === 'light' ? '🌙' : '☀️'"></span>
-                    </button>
-                </div>
+                <button class="button" @click="toggleTheme()" title="Toggle Light/Dark Mode">
+                    <span class="icon" x-text="theme === 'light' ? '🌙' : '☀️'"></span>
+                </button>
             </div>
 
             <!-- User Selection -->
@@ -84,15 +78,22 @@
                                         <div class="is-size-7 has-text-weight-bold" :class="theme === 'dark' ? 'has-text-white-ter' : ''">
                                             Code: <span class="tag" :class="theme === 'light' ? 'is-danger is-light' : 'is-danger is-dark'" x-text="stop.code || getStopId(stop)"></span>
                                         </div>
-                                        <div class="tags are-small mb-0 is-align-items-center" x-show="filterEnabled">
+                                        <div class="tags are-small mb-0 is-align-items-center" x-data="{ expandedTags: false }">
                                             <span class="is-size-7 has-text-weight-bold mr-2" :class="theme === 'dark' ? 'has-text-white-ter' : ''">Filter:</span>
                                             <template x-for="route in getAvailableRoutesForStop(stop)" :key="route">
                                                 <span class="tag is-clickable" 
+                                                      x-show="expandedTags || (stop.routes && stop.routes.includes(route.toUpperCase()))"
                                                       :class="isRouteActiveForStop(route, stop) ? (theme === 'light' ? 'is-primary' : 'is-primary is-dark') : (theme === 'light' ? 'is-light' : 'is-dark')"
                                                       @click="toggleRouteFilterForStop(route, stop)"
                                                       x-text="route">
                                                 </span>
                                             </template>
+                                            <span class="tag is-clickable is-light"
+                                                  @click="expandedTags = !expandedTags"
+                                                  x-show="getAvailableRoutesForStop(stop).length > 0"
+                                                  x-text="expandedTags ? '<' : '...'"
+                                                  :title="expandedTags ? 'Collapse routes' : 'Expand all routes'">
+                                            </span>
                                         </div>
                                     </div>
 
@@ -181,7 +182,6 @@
                 timer: null,
                 refreshInterval: null,
                 theme: localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'),
-                filterEnabled: localStorage.getItem('filterEnabled') !== 'false',
 
                 async init() {
                     document.documentElement.setAttribute('data-theme', this.theme);
@@ -262,11 +262,6 @@
                     this.theme = this.theme === 'light' ? 'dark' : 'light';
                     localStorage.setItem('theme', this.theme);
                     document.documentElement.setAttribute('data-theme', this.theme);
-                },
-
-                toggleFilter() {
-                    this.filterEnabled = !this.filterEnabled;
-                    localStorage.setItem('filterEnabled', this.filterEnabled);
                 },
 
                 getStopId(stop) {
@@ -529,12 +524,9 @@
                         // Filter by service_type 1 and 2, by specific routes if defined, AND ensure 'eta' exists
                         const filtered = data.filter(item => {
                             const isValidService = item.service_type === 1 || item.service_type === 2;
-                            let isRequestedRoute = true;
-                            
-                            // Only apply filter if filterEnabled is true AND the stop has specific routes selected
-                            if (this.filterEnabled && stop.routes && stop.routes.length > 0) {
-                                isRequestedRoute = stop.routes.includes(item.route.toUpperCase());
-                            }
+                            let isRequestedRoute = stop.routes && stop.routes.length > 0 
+                                ? stop.routes.includes(item.route.toUpperCase()) 
+                                : true;
                             
                             // Apply URL route filter if it exists
                             if (this.urlRouteFilter.length > 0) {
