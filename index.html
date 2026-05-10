@@ -12,6 +12,11 @@
         [x-cloak] { display: none !important; }
         .eta-row { transition: all 0.3s ease; }
         .last-updated { font-style: italic; color: #888; }
+        .card.is-focused {
+            outline: 3px solid var(--bulma-primary);
+            outline-offset: 2px;
+            transition: outline 0.5s ease;
+        }
     </style>
 </head>
 <body>
@@ -380,6 +385,23 @@
                     window.history.pushState(null, '', finalUrlStr);
                 },
 
+                scrollToStop(code) {
+                    this.$nextTick(() => {
+                        const stopId = this.stopIdMap[code.toUpperCase()];
+                        if (!stopId) return;
+                        
+                        const cards = document.querySelectorAll('.card');
+                        for (const card of cards) {
+                            if (card.id.split('-').includes(stopId)) {
+                                card.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                                card.classList.add('is-focused');
+                                setTimeout(() => card.classList.remove('is-focused'), 2000);
+                                break;
+                            }
+                        }
+                    });
+                },
+
                 addStop(code) {
                     if (!code) return;
                     const stopCode = code.trim().toUpperCase();
@@ -388,13 +410,13 @@
                         return;
                     }
                     if (!this.selectedUser) {
-                        this.selectedUser = { username: 'Custom View', stops: [] };
-                        this.selectedUsername = 'Custom View';
+                        this.selectedUser = { stops: [] };
                     }
                     
                     // Prevent duplicate stops
                     if (this.selectedUser.stops.some(s => (s.code || s.id) === stopCode)) {
                         this.newStopCode = '';
+                        this.scrollToStop(stopCode);
                         return;
                     }
 
@@ -403,14 +425,16 @@
                     this.updateUrl();
                     this.refreshAll();
                     this.startTimers();
+                    this.scrollToStop(stopCode);
                 },
 
                 createLinkFromSelection() {
                     if (this.selectedSearchStops.length === 0) return;
                     if (!this.selectedUser) {
-                        this.selectedUser = { username: 'Custom View', stops: [] };
-                        this.selectedUsername = 'Custom View';
+                        this.selectedUser = { stops: [] };
                     }
+                    
+                    const firstNewCode = this.selectedSearchStops[0];
                     
                     this.selectedSearchStops.forEach(code => {
                          if (!this.selectedUser.stops.some(s => (s.code || s.id) === code)) {
@@ -424,6 +448,10 @@
                     this.refreshAll();
                     this.startTimers();
                     this.showManual = false;
+                    
+                    if (firstNewCode) {
+                        this.scrollToStop(firstNewCode);
+                    }
                 },
 
                 startTimers() {
