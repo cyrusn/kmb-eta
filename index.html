@@ -1,0 +1,580 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>KMB Bus ETA Dashboard</title>
+    <!-- Bulma CSS for styling -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@1.0.4/css/bulma.min.css">
+    <!-- Alpine.js for lightweight reactivity -->
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <style>
+        [x-cloak] { display: none !important; }
+        .eta-row { transition: all 0.3s ease; }
+        .last-updated { font-style: italic; color: #888; }
+    </style>
+</head>
+<body>
+    <section class="section" x-data="busApp()" x-init="init()">
+        <div class="container">
+            <div class="box is-flex is-align-items-center is-justify-content-space-between">
+                <div>
+                    <h1 class="title">🚌 KMB Bus ETA</h1>
+                    <p class="subtitle">Real-time arrival information for your routes</p>
+                </div>
+                <button class="button" @click="toggleTheme()" title="Toggle Light/Dark Mode">
+                    <span class="icon" x-text="theme === 'light' ? '🌙' : '☀️'"></span>
+                </button>
+            </div>
+
+            <!-- User Selection -->
+            <div class="field is-horizontal mb-6">
+                <div class="field-label is-normal">
+                    <label class="label">Switch User:</label>
+                </div>
+                <div class="field-body">
+                    <div class="field">
+                        <div class="control">
+                            <div class="select is-fullwidth">
+                                <select x-model="selectedUsername" @change="onUserChange()">
+                                    <option value="">Select a user...</option>
+                                    <template x-for="user in users" :key="user.username">
+                                        <option :value="user.username" x-text="user.username"></option>
+                                    </template>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Dashboard Content -->
+            <div x-show="selectedUser" x-cloak>
+                <div class="level is-mobile mb-4">
+                    <div class="level-left">
+                        <h2 class="title is-4" x-text="selectedUser?.username === 'Custom Stops' ? 'Custom Stops' : selectedUser?.username + '\'s Commute'"></h2>
+                    </div>
+                    <div class="level-right">
+                        <p class="last-updated is-size-7">
+                            Refresh in: <span class="tag" :class="theme === 'light' ? 'is-light' : 'is-dark'" x-text="countdown + 's'"></span><br>
+                            Updated: <span x-text="lastUpdated"></span>
+                        </p>
+                    </div>
+                </div>
+
+                <template x-for="stopGroup in getGroupedStops()" :key="stopGroup.baseName">
+                    <div :id="stopGroup.originalIds.join('-')" class="card mb-5">
+                        <header class="card-header" :class="theme === 'light' ? 'has-background-warning-light' : 'has-background-warning-dark'">
+                            <p class="card-header-title">
+                                <span class="icon mr-2">📍</span>
+                                <span x-text="stopGroup.baseName"></span>
+                            </p>
+                        </header>
+                        <div class="card-content p-0">
+                            <template x-for="stop in stopGroup.stops" :key="getStopId(stop)">
+                                <div class="p-0 border-bottom">
+                                    <!-- Stop Code Sub-heading & Filters -->
+                                    <div class="px-5 py-3 is-flex is-align-items-center is-justify-content-space-between border-bottom" :class="theme === 'light' ? 'has-background-primary-light' : 'has-background-primary-dark'">
+                                        <div class="is-size-7 has-text-weight-bold" :class="theme === 'dark' ? 'has-text-white-ter' : ''">
+                                            Code: <span class="tag" :class="theme === 'light' ? 'is-danger is-light' : 'is-danger is-dark'" x-text="stop.code || getStopId(stop)"></span>
+                                        </div>
+                                        <div class="tags are-small mb-0 is-align-items-center">
+                                            <span class="is-size-7 has-text-weight-bold mr-2" :class="theme === 'dark' ? 'has-text-white-ter' : ''">Filter:</span>
+                                            <template x-for="route in getAvailableRoutesForStop(stop)" :key="route">
+                                                <span class="tag is-clickable" 
+                                                      :class="isRouteActiveForStop(route, stop) ? (theme === 'light' ? 'is-primary' : 'is-primary is-dark') : (theme === 'light' ? 'is-light' : 'is-dark')"
+                                                      @click="toggleRouteFilterForStop(route, stop)"
+                                                      x-text="route">
+                                                </span>
+                                            </template>
+                                        </div>
+                                    </div>
+
+                                    <table class="table is-fullwidth is-hoverable is-striped mb-0">
+                                        <thead>
+                                            <tr>
+                                                <th style="width: 20%">Route</th>
+                                                <th>Destination</th>
+                                                <th style="width: 50%">Upcoming Buses</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <template x-for="group in getGroupedETAForStops([stop])" :key="group.route + group.dest_tc + group.service_type">
+                                                <tr class="eta-row">
+                                                    <td class="is-vcentered">
+                                                        <a :href="'https://search.kmb.hk/KMBWebSite/?action=routesearch&route=' + group.route" target="_blank" rel="noopener noreferrer">
+                                                            <span class="tag is-medium is-clickable is-link" :class="theme === 'light' ? 'is-light' : 'is-dark'" x-text="group.route"></span>
+                                                        </a>
+                                                        <template x-if="group.service_type === 2">
+                                                            <span class="tag is-small ml-1" :class="theme === 'light' ? 'is-warning is-light' : 'is-warning is-dark'">Special</span>
+                                                        </template>
+                                                    </td>
+                                                    <td class="is-vcentered">
+                                                        <div class="is-size-6 has-text-weight-semibold" x-text="group.dest_tc"></div>
+                                                        <div class="is-size-7" x-text="group.dest_en"></div>
+                                                    </td>
+                                                    <td>
+                                                        <div class="tags are-medium">
+                                                            <template x-for="eta in group.etas" :key="eta.eta_seq + '_' + eta.eta">
+                                                                <span class="tag" :class="theme === 'light' ? 'is-light' : 'is-dark'">
+                                                                    <strong x-text="formatETA(eta.eta)"></strong>
+                                                                </span>
+                                                            </template>
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                            </template>
+                                            <tr x-show="getGroupedETAForStops([stop]).length === 0">
+                                                <td colspan="3" class="has-text-centered py-4">
+                                                    No upcoming buses for selected routes.
+                                                </td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </template>
+                        </div>
+                    </div>
+                </template>
+            </div>
+
+            <!-- Empty State -->
+            <div x-show="!selectedUser" class="has-text-centered py-6">
+                <div class="box is-inline-block" style="max-width: 500px;">
+                    <p class="is-size-5 mb-4">📍 No bus stops selected</p>
+                    <p class="mb-5">Select a user from the dropdown above, or enter a bus stop code below to start.</p>
+                    
+                    <div class="field has-addons has-addons-centered">
+                        <div class="control">
+                            <input class="input" type="text" placeholder="e.g. KT108" x-model="newStopCode" @keyup.enter="addStop(newStopCode)">
+                        </div>
+                        <div class="control">
+                            <button class="button is-primary" @click="addStop(newStopCode)">
+                                Add Stop
+                            </button>
+                        </div>
+                    </div>
+                    <p class="is-size-7 has-text-grey mt-2">Example codes: KT108, TK576, KT193</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <script>
+        function busApp() {
+            return {
+                users: [],
+                selectedUsername: '',
+                selectedUser: null,
+                newStopCode: '',
+                urlRouteFilter: [],
+                etaData: {},
+                stopNames: {},
+                lastUpdated: '-',
+                countdown: 10,
+                timer: null,
+                refreshInterval: null,
+                theme: localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'),
+
+                async init() {
+                    document.documentElement.setAttribute('data-theme', this.theme);
+                    try {
+                        // 1. Fetch all stops to build code -> id mapping
+                        const stopsResp = await fetch('https://data.etabus.gov.hk/v1/transport/kmb/stop');
+                        const stopsJson = await stopsResp.json();
+                        this.stopIdMap = {}; // code -> id
+                        this.stopDataMap = {}; // id -> full data
+                        
+                        stopsJson.data.forEach(s => {
+                            this.stopDataMap[s.stop] = s;
+                            // Extract code from name_en or name_tc, e.g. "NAME (CODE)" or "NAME（CODE）"
+                            const match = (s.name_en || s.name_tc).match(/[\(（](.*?)[\)）]\s*$/);
+                            if (match) {
+                                const code = match[1].trim();
+                                this.stopIdMap[code] = s.stop;
+                            }
+                        });
+
+                        // Add cache-busting timestamp to always fetch the latest data.json
+                        const resp = await fetch('data.json?t=' + new Date().getTime());
+                        this.users = await resp.json();
+                        
+                        const urlParams = new URLSearchParams(window.location.search);
+                        
+                        // Parse multiple 'stops=' parameters
+                        // e.g. ?user=alvin_ngan&stops=KT193:290A+290X&stops=KT108:290A
+                        const urlStops = [];
+                        const stopsParams = urlParams.getAll('stops');
+                        
+                        stopsParams.forEach(stopParam => {
+                            // stopParam format: "CODE:ROUTE1+ROUTE2" or just "CODE"
+                            // Note: URLSearchParams automatically decodes '+' to ' ' (space)
+                            const parts = stopParam.split(':');
+                            const code = parts[0].trim().toUpperCase();
+                            const routesStr = parts[1] || '';
+                            const routes = routesStr ? routesStr.split(' ').map(r => r.trim().toUpperCase()) : [];
+                            if (code) {
+                                urlStops.push({ code, routes });
+                            }
+                        });
+
+                        const targetSlug = urlParams.get('user')?.toLowerCase();
+                        
+                        if (urlStops.length > 0) {
+                            // If URL has stops, use them. If user is also present, try to match the username.
+                            let username = 'Custom View';
+                            if (targetSlug) {
+                                const matchedUser = this.users.find(u => 
+                                    u.username.toLowerCase().replace(/\s+/g, '_') === targetSlug || 
+                                    u.username.toLowerCase() === targetSlug
+                                );
+                                if (matchedUser) username = matchedUser.username;
+                            }
+                            this.selectedUser = {
+                                username: username,
+                                stops: urlStops
+                            };
+                            this.selectedUsername = username;
+                            this.onUserChange(false);
+                        } else if (targetSlug) {
+                            const matchedUser = this.users.find(u => 
+                                u.username.toLowerCase().replace(/\s+/g, '_') === targetSlug || 
+                                u.username.toLowerCase() === targetSlug
+                            );
+                            if (matchedUser) {
+                                this.selectedUsername = matchedUser.username;
+                                this.onUserChange(true); // Update URL to show the stops from data.json
+                            }
+                        }
+                    } catch (e) {
+                        console.error('Failed to load data', e);
+                    }
+                },
+
+                toggleTheme() {
+                    this.theme = this.theme === 'light' ? 'dark' : 'light';
+                    localStorage.setItem('theme', this.theme);
+                    document.documentElement.setAttribute('data-theme', this.theme);
+                },
+
+                getStopId(stop) {
+                    if (stop.id) return stop.id;
+                    if (stop.code) return this.stopIdMap[stop.code];
+                    return null;
+                },
+
+                getAvailableRoutesForStop(stop) {
+                    const routes = new Set();
+                    const stopId = this.getStopId(stop);
+                    if (!stopId) return [];
+                    const data = this.etaData[stopId] || [];
+                    data.forEach(item => {
+                        if (item.service_type === 1 || item.service_type === 2) {
+                            routes.add(item.route);
+                        }
+                    });
+                    return Array.from(routes).sort((a, b) => a.localeCompare(b, undefined, {numeric: true, sensitivity: 'base'}));
+                },
+
+                isRouteActiveForStop(route, stop) {
+                    if (!stop.routes || stop.routes.length === 0) return true;
+                    return stop.routes.includes(route.toUpperCase());
+                },
+
+                toggleRouteFilterForStop(route, stop) {
+                    const r = route.toUpperCase();
+                    if (!stop.routes) stop.routes = [];
+                    if (stop.routes.includes(r)) {
+                        stop.routes = stop.routes.filter(item => item !== r);
+                    } else {
+                        stop.routes.push(r);
+                    }
+                    this.updateUrl();
+                },
+
+                getAvailableRoutesForGroup(stopGroup) {
+                    // Deprecated: Template now uses per-stop filtering
+                    return [];
+                },
+
+                isRouteActive(route, stopGroup) {
+                    // Deprecated: Template now uses per-stop filtering
+                    return true;
+                },
+
+                toggleRouteFilter(route, stopGroup) {
+                    // Deprecated: Template now uses per-stop filtering
+                },
+
+                updateUrl() {
+                    if (!this.selectedUser) return;
+                    const url = new URL(window.location.origin + window.location.pathname);
+                    
+                    // Always set user if it exists in our users list
+                    const isKnownUser = this.users.find(u => u.username === this.selectedUser.username);
+                    if (isKnownUser && isKnownUser.username !== 'Custom View') {
+                        const slug = this.selectedUser.username.toLowerCase().replace(/\s+/g, '_');
+                        url.searchParams.set('user', slug);
+                    }
+                    
+                    // Clear old indexed params (just in case they exist)
+                    for (let key of Array.from(url.searchParams.keys())) {
+                        if (key.startsWith('bus_stop[') || key.startsWith('routes[')) {
+                            url.searchParams.delete(key);
+                        }
+                    }
+                    url.searchParams.delete('bus_stops');
+                    url.searchParams.delete('routes');
+                    url.searchParams.delete('stops'); // Clear existing 'stops' to rebuild
+
+                    // Set new multiple 'stops' params
+                    this.selectedUser.stops.forEach((stop) => {
+                        let stopParam = stop.code || stop.id;
+                        if (stop.routes && stop.routes.length > 0) {
+                            stopParam += ':' + stop.routes.join('+');
+                        }
+                        url.searchParams.append('stops', stopParam);
+                    });
+                    
+                    // Manually decode the URL to keep it readable for the user (decode %3A to : and %2B to +)
+                    let finalUrlStr = url.toString().replace(/%3A/g, ':').replace(/%2B/g, '+');
+                    window.history.pushState(null, '', finalUrlStr);
+                },
+
+                addStop(code) {
+                    if (!code) return;
+                    const stopCode = code.trim().toUpperCase();
+                    if (!this.stopIdMap[stopCode]) {
+                        alert('Invalid stop code: ' + stopCode);
+                        return;
+                    }
+                    if (!this.selectedUser) {
+                        this.selectedUser = { username: 'Custom View', stops: [] };
+                        this.selectedUsername = 'Custom View';
+                    }
+                    
+                    // Prevent duplicate stops
+                    if (this.selectedUser.stops.some(s => (s.code || s.id) === stopCode)) {
+                        this.newStopCode = '';
+                        return;
+                    }
+
+                    this.selectedUser.stops.push({ code: stopCode, routes: [] });
+                    this.newStopCode = '';
+                    this.updateUrl();
+                    this.refreshAll();
+                    this.startTimers();
+                },
+
+                onUserChange(updateUrl = true) {
+                    const userFromData = this.users.find(u => u.username === this.selectedUsername);
+                    if (userFromData) {
+                        // Deep clone to avoid modifying original this.users
+                        this.selectedUser = JSON.parse(JSON.stringify(userFromData));
+                    }
+                    
+                    this.etaData = {};
+                    this.stopNames = {};
+                    this.countdown = 10;
+                    
+                    if (this.selectedUser) {
+                        if (updateUrl) {
+                            this.updateUrl();
+                        }
+                        this.refreshAll();
+                        this.startTimers();
+                    } else {
+                        if (updateUrl) {
+                            const url = new URL(window.location.origin + window.location.pathname);
+                            window.history.pushState(null, '', url);
+                        }
+                        this.stopTimers();
+                    }
+                },
+
+                startTimers() {
+                    this.stopTimers();
+                    
+                    // Countdown timer
+                    this.timer = setInterval(() => {
+                        if (this.countdown > 1) {
+                            this.countdown--;
+                        } else {
+                            this.countdown = 10;
+                        }
+                    }, 1000);
+
+                    // Refresh interval
+                    this.refreshInterval = setInterval(() => {
+                        this.refreshAll();
+                    }, 10000);
+                },
+
+                stopTimers() {
+                    if (this.timer) clearInterval(this.timer);
+                    if (this.refreshInterval) clearInterval(this.refreshInterval);
+                },
+
+                async refreshAll() {
+                    if (!this.selectedUser) return;
+                    
+                    for (const stop of this.selectedUser.stops) {
+                        const stopId = this.getStopId(stop);
+                        if (stopId) {
+                            this.fetchETA(stopId);
+                            this.fetchStopName(stopId);
+                        }
+                    }
+                    this.lastUpdated = new Date().toLocaleTimeString();
+                },
+
+                async fetchETA(stopId) {
+                    try {
+                        const resp = await fetch(`https://data.etabus.gov.hk/v1/transport/kmb/stop-eta/${stopId}`);
+                        const json = await resp.json();
+                        this.etaData[stopId] = json.data;
+                    } catch (e) {
+                        console.error(`Error fetching ETA for ${stopId}`, e);
+                    }
+                },
+
+                async fetchStopName(stopId) {
+                    if (this.stopNames[stopId]) return; // Already fetched
+                    
+                    // First check if we already have it in stopDataMap
+                    if (this.stopDataMap[stopId]) {
+                        this.stopNames[stopId] = this.stopDataMap[stopId].name_tc;
+                        return;
+                    }
+
+                    try {
+                        const resp = await fetch(`https://data.etabus.gov.hk/v1/transport/kmb/stop/${stopId}`);
+                        const json = await resp.json();
+                        if (json.data) {
+                            this.stopNames[stopId] = json.data.name_tc;
+                        }
+                    } catch (e) {
+                        console.error(`Error fetching stop name for ${stopId}`, e);
+                    }
+                },
+
+                getGroupedStops() {
+                    if (!this.selectedUser) return [];
+                    const groups = {};
+                    for (const stop of this.selectedUser.stops) {
+                        const stopId = this.getStopId(stop);
+                        if (!stopId) continue;
+
+                        const rawName = this.stopNames[stopId];
+                        let baseName = 'Loading...';
+                        let code = '';
+                        
+                        if (rawName) {
+                            const match = rawName.match(/[\(（](.*?)[\)）]/);
+                            if (match) {
+                                code = match[1].trim();
+                            }
+                            // Remove any bracketed text to get the base name
+                            baseName = rawName.replace(/\s*[\(（].*?[\)）]\s*/g, '').trim();
+                        }
+                        
+                        if (!groups[baseName]) {
+                            groups[baseName] = {
+                                baseName: baseName,
+                                codes: new Set(),
+                                originalIds: [],
+                                stops: []
+                            };
+                        }
+                        if (code) {
+                            groups[baseName].codes.add(code);
+                        }
+                        groups[baseName].originalIds.push(stopId);
+                        groups[baseName].stops.push(stop);
+                    }
+                    
+                    const result = Object.values(groups);
+                    result.forEach(group => {
+                        if (group.codes.size > 0) {
+                            const codesArray = Array.from(group.codes);
+                            group.name = `${group.baseName} (${codesArray.join(', ')})`;
+                        } else {
+                            group.name = group.baseName;
+                        }
+                    });
+                    
+                    return result;
+                },
+
+                getGroupedETAForStops(stops) {
+                    let allFiltered = [];
+                    
+                    for (const stop of stops) {
+                        const stopId = this.getStopId(stop);
+                        if (!stopId) continue;
+                        const data = this.etaData[stopId] || [];
+                        
+                        // Filter by service_type 1 and 2, by specific routes if defined, AND ensure 'eta' exists
+                        const filtered = data.filter(item => {
+                            const isValidService = item.service_type === 1 || item.service_type === 2;
+                            let isRequestedRoute = stop.routes && stop.routes.length > 0 
+                                ? stop.routes.includes(item.route) 
+                                : true;
+                            
+                            // Apply URL route filter if it exists
+                            if (this.urlRouteFilter.length > 0) {
+                                isRequestedRoute = isRequestedRoute && this.urlRouteFilter.includes(item.route.toUpperCase());
+                            }
+
+                            const hasEtaTime = item.eta !== null && item.eta !== '';
+                            return isValidService && isRequestedRoute && hasEtaTime;
+                        });
+                        allFiltered = allFiltered.concat(filtered);
+                    }
+                    
+                    const grouped = {};
+                    allFiltered.forEach(eta => {
+                        const key = `${eta.route}_${eta.dest_tc}_${eta.service_type}`;
+                        if (!grouped[key]) {
+                            grouped[key] = {
+                                route: eta.route,
+                                dest_tc: eta.dest_tc,
+                                dest_en: eta.dest_en,
+                                service_type: eta.service_type,
+                                etas: []
+                            };
+                        }
+                        grouped[key].etas.push(eta);
+                    });
+
+                    const result = Object.values(grouped)
+                        .sort((a, b) => a.route.localeCompare(b.route, undefined, {numeric: true, sensitivity: 'base'}));
+                    
+                    result.forEach(group => {
+                        // Remove duplicates by exact ETA time across merged stops
+                        const uniqueEtas = [];
+                        const seenTimes = new Set();
+                        
+                        group.etas.sort((a, b) => new Date(a.eta) - new Date(b.eta)).forEach(eta => {
+                            if (!seenTimes.has(eta.eta)) {
+                                seenTimes.add(eta.eta);
+                                uniqueEtas.push(eta);
+                            }
+                        });
+                        group.etas = uniqueEtas;
+                    });
+
+                    return result;
+                },
+
+                formatETA(etaTime) {
+                    if (!etaTime) return 'No Data';
+                    const diff = Math.floor((new Date(etaTime) - new Date()) / 60000);
+                    if (diff <= 0) return 'Arriving';
+                    return `${diff} min`;
+                }
+            }
+        }
+    </script>
+</body>
+</html>
