@@ -1,9 +1,0 @@
-[
-  {
-    "username": "Alvin Ngan",
-    "stops": [
-      { "code": "KT193", "routes": ["290A", "290X"] },
-      { "code": "TK107", "routes": ["290A", "290X"] }
-    ]
-  }
-]

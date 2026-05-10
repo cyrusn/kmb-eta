@@ -17,7 +17,7 @@
 <body>
     <section class="section" x-data="busApp()" x-init="init()">
         <div class="container">
-            <div class="box is-flex is-align-items-center is-justify-content-space-between">
+            <div class="box is-flex is-align-items-center is-justify-content-space-between mb-6">
                 <div>
                     <h1 class="title">🚌 KMB Bus ETA</h1>
                     <p class="subtitle">Real-time arrival information for your routes</p>
@@ -32,32 +32,11 @@
                 </div>
             </div>
 
-            <!-- User Selection -->
-            <div class="field is-horizontal mb-6">
-                <div class="field-label is-normal">
-                    <label class="label">Switch User:</label>
-                </div>
-                <div class="field-body">
-                    <div class="field">
-                        <div class="control">
-                            <div class="select is-fullwidth">
-                                <select x-model="selectedUsername" @change="onUserChange()">
-                                    <option value="">Select a user...</option>
-                                    <template x-for="user in users" :key="user.username">
-                                        <option :value="user.username" x-text="user.username"></option>
-                                    </template>
-                                </select>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
             <!-- Dashboard Content -->
             <div x-show="selectedUser && !showManual" x-cloak>
                 <div class="level is-mobile mb-4">
                     <div class="level-left">
-                        <h2 class="title is-4" x-text="selectedUser?.username === 'Custom Stops' ? 'Custom Stops' : selectedUser?.username + '\'s Commute'"></h2>
+                        <h2 class="title is-4">My Custom Stops</h2>
                     </div>
                     <div class="level-right">
                         <p class="last-updated is-size-7">
@@ -212,7 +191,6 @@
                         <h2 class="title is-5 mt-5">📖 How to Use</h2>
                         <div class="content is-medium">
                             <ol>
-                                <li><strong>Select a User:</strong> Use the dropdown at the top to load a pre-configured list of bus stops.</li>
                                 <li><strong>Add Stops:</strong> Use the search box above to find and add stops to your dashboard.</li>
                                 <li><strong>Filter Routes:</strong> Click the route tags (e.g., <code>290A</code>) to show only those buses. Click <code>...</code> to see all routes at a stop.</li>
                                 <li><strong>Share & Custom Links:</strong> The URL updates automatically, so you can just bookmark it! You can also manually create links:
@@ -233,8 +211,6 @@
     <script>
         function busApp() {
             return {
-                users: [],
-                selectedUsername: '',
                 selectedUser: null,
                 newStopCode: '',
                 stopSearchQuery: '',
@@ -270,20 +246,14 @@
                             }
                         });
 
-                        // Add cache-busting timestamp to always fetch the latest data.json
-                        const resp = await fetch('data.json?t=' + new Date().getTime());
-                        this.users = await resp.json();
-                        
                         const urlParams = new URLSearchParams(window.location.search);
                         
                         // Parse multiple 'stops=' parameters
-                        // e.g. ?user=alvin_ngan&stops=KT193:290A+290X&stops=KT108:290A
+                        // e.g. ?stops=KT193:290A+290X&stops=KT108:290A
                         const urlStops = [];
                         const stopsParams = urlParams.getAll('stops');
                         
                         stopsParams.forEach(stopParam => {
-                            // stopParam format: "CODE:ROUTE1+ROUTE2" or just "CODE"
-                            // Note: URLSearchParams automatically decodes '+' to ' ' (space)
                             const parts = stopParam.split(':');
                             const code = parts[0].trim().toUpperCase();
                             const routesStr = parts[1] || '';
@@ -293,33 +263,12 @@
                             }
                         });
 
-                        const targetSlug = urlParams.get('user')?.toLowerCase();
-                        
                         if (urlStops.length > 0) {
-                            // If URL has stops, use them. If user is also present, try to match the username.
-                            let username = 'Custom View';
-                            if (targetSlug) {
-                                const matchedUser = this.users.find(u => 
-                                    u.username.toLowerCase().replace(/\s+/g, '_') === targetSlug || 
-                                    u.username.toLowerCase() === targetSlug
-                                );
-                                if (matchedUser) username = matchedUser.username;
-                            }
                             this.selectedUser = {
-                                username: username,
                                 stops: urlStops
                             };
-                            this.selectedUsername = username;
-                            this.onUserChange(false);
-                        } else if (targetSlug) {
-                            const matchedUser = this.users.find(u => 
-                                u.username.toLowerCase().replace(/\s+/g, '_') === targetSlug || 
-                                u.username.toLowerCase() === targetSlug
-                            );
-                            if (matchedUser) {
-                                this.selectedUsername = matchedUser.username;
-                                this.onUserChange(true); // Update URL to show the stops from data.json
-                            }
+                            this.refreshAll();
+                            this.startTimers();
                         }
                     } catch (e) {
                         console.error('Failed to load data', e);
@@ -403,13 +352,6 @@
                     if (!this.selectedUser) return;
                     const url = new URL(window.location.origin + window.location.pathname);
                     
-                    // Always set user if it exists in our users list
-                    const isKnownUser = this.users.find(u => u.username === this.selectedUser.username);
-                    if (isKnownUser && isKnownUser.username !== 'Custom View') {
-                        const slug = this.selectedUser.username.toLowerCase().replace(/\s+/g, '_');
-                        url.searchParams.set('user', slug);
-                    }
-                    
                     // Clear old indexed params (just in case they exist)
                     for (let key of Array.from(url.searchParams.keys())) {
                         if (key.startsWith('bus_stop[') || key.startsWith('routes[')) {
@@ -419,6 +361,7 @@
                     url.searchParams.delete('bus_stops');
                     url.searchParams.delete('routes');
                     url.searchParams.delete('stops'); // Clear existing 'stops' to rebuild
+                    url.searchParams.delete('user'); // Clean up old user params
 
                     // Set new multiple 'stops' params
                     this.selectedUser.stops.forEach((stop) => {
@@ -478,32 +421,6 @@
                     this.refreshAll();
                     this.startTimers();
                     this.showManual = false;
-                },
-
-                onUserChange(updateUrl = true) {
-                    const userFromData = this.users.find(u => u.username === this.selectedUsername);
-                    if (userFromData) {
-                        // Deep clone to avoid modifying original this.users
-                        this.selectedUser = JSON.parse(JSON.stringify(userFromData));
-                    }
-                    
-                    this.etaData = {};
-                    this.stopNames = {};
-                    this.countdown = 10;
-                    
-                    if (this.selectedUser) {
-                        if (updateUrl) {
-                            this.updateUrl();
-                        }
-                        this.refreshAll();
-                        this.startTimers();
-                    } else {
-                        if (updateUrl) {
-                            const url = new URL(window.location.origin + window.location.pathname);
-                            window.history.pushState(null, '', url);
-                        }
-                        this.stopTimers();
-                    }
                 },
 
                 startTimers() {
