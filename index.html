@@ -103,9 +103,11 @@
                                             <template x-for="group in getGroupedETAForStops([stop])" :key="group.route + group.dest_tc + group.service_type">
                                                 <tr class="eta-row">
                                                     <td class="is-vcentered">
-                                                        <a :href="'https://search.kmb.hk/KMBWebSite/?action=routesearch&route=' + group.route" target="_blank" rel="noopener noreferrer">
-                                                            <span class="tag is-medium is-clickable is-link" :class="theme === 'light' ? 'is-light' : 'is-dark'" x-text="group.route"></span>
-                                                        </a>
+                                                        <span class="tag is-medium is-clickable is-link" 
+                                                              :class="theme === 'light' ? 'is-light' : 'is-dark'" 
+                                                              @click="toggleRouteStops(group, getStopId(stop))"
+                                                              x-text="group.route">
+                                                        </span>
                                                         <template x-if="group.service_type > 1">
                                                             <span class="tag is-small ml-1" :class="theme === 'light' ? 'is-warning is-light' : 'is-warning is-dark'" title="Service Type" x-text="'#' + group.service_type"></span>
                                                         </template>
@@ -113,12 +115,29 @@
                                                     <td class="is-vcentered">
                                                         <div class="is-size-6 has-text-weight-semibold" x-text="group.dest_tc"></div>
                                                         <div class="is-size-7" x-text="group.dest_en"></div>
+                                                        
+                                                        <!-- Stop List Tags -->
+                                                        <div x-show="expandedRouteKey === `${group.route}_${group.dest_tc}_${group.service_type}_${getStopId(stop)}`" 
+                                                             x-cloak 
+                                                             class="mt-2">
+                                                            <div class="tags are-small">
+                                                                <template x-if="!routeStops[`${group.route}_${group.dest_tc}_${group.service_type}_${getStopId(stop)}`]">
+                                                                    <span class="tag is-loading is-white"></span>
+                                                                </template>
+                                                                <template x-for="s in routeStops[`${group.route}_${group.dest_tc}_${group.service_type}_${getStopId(stop)}`]" :key="s.stop">
+                                                                    <span class="tag is-light is-info" x-text="s.name"></span>
+                                                                </template>
+                                                            </div>
+                                                        </div>
                                                     </td>
                                                     <td>
                                                         <div class="tags are-medium">
                                                             <template x-for="eta in group.etas" :key="eta.eta_seq + '_' + eta.eta">
-                                                                <span class="tag" :class="theme === 'light' ? 'is-light' : 'is-dark'">
+                                                                <span class="tag is-flex is-flex-direction-column is-align-items-center py-4" :class="theme === 'light' ? 'is-light' : 'is-dark'" style="height: auto;">
                                                                     <strong x-text="formatETA(eta.eta)"></strong>
+                                                                    <template x-if="eta.rmk_tc && eta.rmk_tc.trim() !== '' && eta.rmk_tc !== '原定班次'">
+                                                                        <span class="is-size-7 mt-1 has-text-grey" x-text="eta.rmk_tc"></span>
+                                                                    </template>
                                                                 </span>
                                                             </template>
                                                         </div>
@@ -182,7 +201,7 @@
                         </div>
 
                         <!-- Selected Stops Preview -->
-                        <div class="box has-background-light mb-5" x-show="selectedSearchStops.length > 0">
+                        <div class="box mb-5" x-show="selectedSearchStops.length > 0">
                             <p class="is-size-7 mb-2 has-text-weight-bold">Selected Stops:</p>
                             <div class="tags">
                                 <template x-for="code in selectedSearchStops" :key="code">
@@ -227,6 +246,8 @@
                 selectedSearchStops: [],
                 showManual: false,
                 allStopsList: [],
+                routeStops: {},
+                expandedRouteKey: null,
                 urlRouteFilter: [],
                 etaData: {},
                 stopNames: {},
@@ -532,6 +553,51 @@
                         this.etaData[stopId] = json.data;
                     } catch (e) {
                         console.error(`Error fetching ETA for ${stopId}`, e);
+                    }
+                },
+
+                async toggleRouteStops(group, currentStopId) {
+                    const key = `${group.route}_${group.dest_tc}_${group.service_type}_${currentStopId}`;
+                    if (this.expandedRouteKey === key) {
+                        this.expandedRouteKey = null;
+                        return;
+                    }
+                    
+                    this.expandedRouteKey = key;
+                    
+                    if (!this.routeStops[key]) {
+                        await this.fetchRouteStops(group, currentStopId, key);
+                    }
+                },
+
+                async fetchRouteStops(group, currentStopId, key) {
+                    try {
+                        // 1. Find the correct bound (O/I)
+                        const routeResp = await fetch(`https://data.etabus.gov.hk/v1/transport/kmb/route/${group.route}`);
+                        const routeJson = await routeResp.json();
+                        const boundInfo = routeJson.data.find(r => 
+                            r.dest_tc === group.dest_tc && 
+                            parseInt(r.service_type) === group.service_type
+                        );
+                        
+                        if (!boundInfo) return;
+
+                        // 2. Fetch stops for this route variation
+                        const stopsResp = await fetch(`https://data.etabus.gov.hk/v1/transport/kmb/route-stop/${group.route}/${boundInfo.bound}/${group.service_type}`);
+                        const stopsJson = await stopsResp.json();
+                        
+                        // 3. Find current stop sequence and filter remaining
+                        const stopList = stopsJson.data;
+                        const currentIndex = stopList.findIndex(s => s.stop === currentStopId);
+                        
+                        if (currentIndex !== -1) {
+                            this.routeStops[key] = stopList.slice(currentIndex + 1).map(s => ({
+                                stop: s.stop,
+                                name: this.stopDataMap[s.stop]?.name_tc || 'Unknown Stop'
+                            }));
+                        }
+                    } catch (e) {
+                        console.error('Failed to fetch route stops', e);
                     }
                 },
 
