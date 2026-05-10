@@ -572,15 +572,19 @@
 
                 async fetchRouteStops(group, currentStopId, key) {
                     try {
-                        // 1. Find the correct bound (O/I)
-                        const routeResp = await fetch(`https://data.etabus.gov.hk/v1/transport/kmb/route/${group.route}`);
+                        // 1. Find the correct bound (O/I) from the full routes list
+                        const routeResp = await fetch(`https://data.etabus.gov.hk/v1/transport/kmb/route/`);
                         const routeJson = await routeResp.json();
                         const boundInfo = routeJson.data.find(r => 
+                            r.route === group.route &&
                             r.dest_tc === group.dest_tc && 
                             parseInt(r.service_type) === group.service_type
                         );
                         
-                        if (!boundInfo) return;
+                        if (!boundInfo) {
+                            console.warn("Could not find bound info for", group);
+                            return;
+                        }
 
                         // 2. Fetch stops for this route variation
                         const stopsResp = await fetch(`https://data.etabus.gov.hk/v1/transport/kmb/route-stop/${group.route}/${boundInfo.bound}/${group.service_type}`);
@@ -595,6 +599,8 @@
                                 stop: s.stop,
                                 name: this.stopDataMap[s.stop]?.name_tc || 'Unknown Stop'
                             }));
+                        } else {
+                            this.routeStops[key] = []; // Current stop not found on this route
                         }
                     } catch (e) {
                         console.error('Failed to fetch route stops', e);
