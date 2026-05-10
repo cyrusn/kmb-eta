@@ -185,44 +185,107 @@
                         
                         <h3 class="subtitle is-5 mb-3">🔍 Find & Add Bus Stops</h3>
                         
-                        <!-- Search by Name -->
-                        <div class="field mb-4">
-                            <label class="label is-small">Search by Name or Code:</label>
-                            <div class="control has-icons-left">
-                                <input class="input" type="text" placeholder="e.g. Millennium City, 創紀之城, KT108..." x-model="stopSearchQuery">
-                                <span class="icon is-small is-left">🔍</span>
+                        <!-- Tabs for Search Mode -->
+                        <div class="tabs is-small is-boxed mb-4">
+                            <ul>
+                                <li :class="searchMode === 'route' ? 'is-active' : ''" @click="searchMode = 'route'">
+                                    <a><span>Search by Route</span></a>
+                                </li>
+                                <li :class="searchMode === 'stop' ? 'is-active' : ''" @click="searchMode = 'stop'">
+                                    <a><span>Search by Stop</span></a>
+                                </li>
+                            </ul>
+                        </div>
+
+                        <!-- Search by Route -->
+                        <div x-show="searchMode === 'route'">
+                            <div class="field mb-4" x-show="!selectedRoute">
+                                <label class="label is-small">Search by Route:</label>
+                                <div class="control has-icons-left">
+                                    <input class="input" type="text" placeholder="e.g. 290A, 98..." x-model="routeSearchQuery">
+                                    <span class="icon is-small is-left">🔍</span>
+                                </div>
+                            </div>
+
+                            <!-- Route Search Results -->
+                            <div class="mb-5" x-show="!selectedRoute && routeSearchQuery.length >= 1">
+                                <div class="panel">
+                                    <p class="panel-heading is-size-7">Route Results</p>
+                                    <template x-for="r in getFilteredRoutes()" :key="r.route + r.bound + r.service_type">
+                                        <a class="panel-block" @click="selectRoute(r)">
+                                            <span class="tag is-link mr-2" x-text="r.route"></span>
+                                            <span class="is-size-7" x-text="r.dest_tc"></span>
+                                            <span class="tag is-small ml-2" x-text="r.bound === 'O' ? 'Outbound' : 'Inbound'"></span>
+                                        </a>
+                                    </template>
+                                </div>
+                            </div>
+
+                            <!-- Stops for Selected Route -->
+                            <div class="mb-5" x-show="selectedRoute">
+                                <div class="panel">
+                                    <p class="panel-heading is-size-7 is-flex is-justify-content-space-between align-items-center">
+                                        <span>Stops for <span class="tag is-link" x-text="selectedRoute.route"></span> to <span x-text="selectedRoute.dest_tc"></span></span>
+                                        <span class="tag is-clickable" @click="selectedRoute = null">Change Route</span>
+                                    </p>
+                                    <div style="max-height: 300px; overflow-y: auto;">
+                                        <template x-for="s in selectedRouteStops" :key="s.stop">
+                                            <div class="panel-block is-flex is-justify-content-space-between align-items-center">
+                                                <label class="is-clickable mb-0 is-flex align-items-center">
+                                                    <input type="checkbox" :checked="isRouteStopSelected(s)" @change="toggleRouteStopSelection(s)" class="mr-2">
+                                                </label>
+                                                <div class="is-flex-grow-1 is-clickable" @click="toggleRouteStopSelection(s)">
+                                                    <span x-text="s.name_tc"></span>
+                                                </div>
+                                                <span class="tag is-info is-light" x-text="s.code"></span>
+                                            </div>
+                                        </template>
+                                    </div>
+                                </div>
                             </div>
                         </div>
 
-                        <!-- Search Results with Checkboxes -->
-                        <div class="mb-5" x-show="stopSearchQuery.length >= 2">
-                            <div class="panel">
-                                <p class="panel-heading is-size-7">Search Results</p>
-                                <template x-for="s in getFilteredStops()" :key="s.stop">
-                                    <div class="panel-block is-flex is-justify-content-space-between align-items-center">
-                                        <label class="is-clickable mb-0 is-flex align-items-center">
-                                            <input type="checkbox" :value="getStopCode(s)" x-model="selectedSearchStops" class="mr-2">
-                                        </label>
-                                        <div class="is-flex-grow-1 is-clickable" @click="if(!selectedSearchStops.includes(getStopCode(s))) { selectedSearchStops.push(getStopCode(s)); } else { selectedSearchStops = selectedSearchStops.filter(c => c !== getStopCode(s)); }">
-                                            <span x-text="s.name_tc"></span>
+                        <!-- Search by Name/Stop -->
+                        <div x-show="searchMode === 'stop'">
+                            <div class="field mb-4">
+                                <label class="label is-small">Search by Name or Code:</label>
+                                <div class="control has-icons-left">
+                                    <input class="input" type="text" placeholder="e.g. Millennium City, 創紀之城, KT108..." x-model="stopSearchQuery">
+                                    <span class="icon is-small is-left">🔍</span>
+                                </div>
+                            </div>
+
+                            <!-- Search Results with Checkboxes -->
+                            <div class="mb-5" x-show="stopSearchQuery.length >= 2">
+                                <div class="panel">
+                                    <p class="panel-heading is-size-7">Search Results</p>
+                                    <template x-for="s in getFilteredStops()" :key="s.stop">
+                                        <div class="panel-block is-flex is-justify-content-space-between align-items-center">
+                                            <label class="is-clickable mb-0 is-flex align-items-center">
+                                                <input type="checkbox" :value="{code: getStopCode(s), fullName: s.name_tc}" x-model="selectedSearchStops" class="mr-2">
+                                            </label>
+                                            <div class="is-flex-grow-1 is-clickable" @click="const code = getStopCode(s); const existing = selectedSearchStops.find(i => (typeof i === 'string' ? i : i.code) === code); if(!existing) { selectedSearchStops.push({code: code, fullName: s.name_tc}); } else { selectedSearchStops = selectedSearchStops.filter(i => (typeof i === 'string' ? i : i.code) !== code); }">
+                                                <span x-text="s.name_tc"></span>
+                                            </div>
+
+                                            <span class="tag is-info is-light is-clickable" x-text="getStopCode(s)" @click="if(!selectedSearchStops.includes(getStopCode(s))) { selectedSearchStops.push(getStopCode(s)); } else { selectedSearchStops = selectedSearchStops.filter(c => c !== getStopCode(s)); }"></span>
                                         </div>
-                                        <span class="tag is-info is-light is-clickable" x-text="getStopCode(s)" @click="if(!selectedSearchStops.includes(getStopCode(s))) { selectedSearchStops.push(getStopCode(s)); } else { selectedSearchStops = selectedSearchStops.filter(c => c !== getStopCode(s)); }"></span>
+                                    </template>
+                                    <div class="panel-block has-text-grey is-size-7" x-show="getFilteredStops().length === 0">
+                                        No stops found matching your search.
                                     </div>
-                                </template>
-                                <div class="panel-block has-text-grey is-size-7" x-show="getFilteredStops().length === 0">
-                                    No stops found matching your search.
                                 </div>
                             </div>
                         </div>
 
                         <!-- Selected Stops Preview -->
                         <div class="box mb-5" x-show="selectedSearchStops.length > 0">
-                            <p class="is-size-7 mb-2 has-text-weight-bold">Selected Stops:</p>
+                            <p class="is-size-7 mb-2 has-text-weight-bold">Selected Stops to Add:</p>
                             <div class="tags">
-                                <template x-for="code in selectedSearchStops" :key="code">
+                                <template x-for="item in selectedSearchStops" :key="typeof item === 'string' ? item : item.code">
                                     <span class="tag is-primary">
-                                        <span x-text="code"></span>
-                                        <button class="delete is-small" @click.stop="selectedSearchStops = selectedSearchStops.filter(c => c !== code)"></button>
+                                        <span x-text="item.fullName || item.code || item"></span>
+                                        <button class="delete is-small" @click.stop="selectedSearchStops = selectedSearchStops.filter(i => i !== item)"></button>
                                     </span>
                                 </template>
                             </div>
@@ -258,8 +321,12 @@
                 selectedUser: null,
                 newStopCode: '',
                 stopSearchQuery: '',
+                routeSearchQuery: '',
                 selectedSearchStops: [],
+                selectedRoute: null,
+                selectedRouteStops: [],
                 showManual: false,
+                searchMode: 'route',
                 allStopsList: [],
                 allRoutesList: [],
                 routeStops: {},
@@ -355,6 +422,67 @@
                                (s.name_sc && s.name_sc.toLowerCase().includes(query)) ||
                                code.includes(query);
                     }).slice(0, 10); // Limit to top 10 results for performance
+                },
+
+                getFilteredRoutes() {
+                    const query = this.routeSearchQuery.trim().toLowerCase();
+                    if (!query || query.length < 1) return [];
+
+                    const seen = new Set();
+                    return this.allRoutesList.filter(r => {
+                        const key = `${r.route}_${r.bound}_${r.service_type}`;
+                        if (seen.has(key)) return false;
+                        if (r.route.toLowerCase().includes(query)) {
+                            seen.add(key);
+                            return true;
+                        }
+                        return false;
+                    }).slice(0, 15);
+                },
+
+                async selectRoute(route) {
+                    this.selectedRoute = route;
+                    this.selectedRouteStops = [];
+                    const direction = route.bound === 'O' ? 'outbound' : 'inbound';
+                    try {
+                        const resp = await fetch(`https://data.etabus.gov.hk/v1/transport/kmb/route-stop/${route.route}/${direction}/${route.service_type}`);
+                        const json = await resp.json();
+                        this.selectedRouteStops = json.data.map(s => {
+                            const fullStopData = this.stopDataMap[s.stop];
+                            return {
+                                ...s,
+                                name_tc: fullStopData ? fullStopData.name_tc : 'Unknown',
+                                code: this.getStopCode(fullStopData || {})
+                            };
+                        });
+                    } catch (e) {
+                        console.error('Failed to fetch route stops', e);
+                    }
+                },
+
+                toggleRouteStopSelection(stop) {
+                    const stopCode = stop.code;
+                    if (!stopCode) return;
+
+                    const existing = this.selectedSearchStops.find(s => (typeof s === 'string' ? s : s.code) === stopCode);
+                    
+                    if (existing) {
+                        this.selectedSearchStops = this.selectedSearchStops.filter(s => s !== existing);
+                    } else {
+                        // Add with route filter and full name
+                        this.selectedSearchStops.push({
+                            code: stopCode,
+                            fullName: stop.name_tc,
+                            routes: [this.selectedRoute.route]
+                        });
+                    }
+                },
+
+                isRouteStopSelected(stop) {
+                    return this.selectedSearchStops.some(s => {
+                        const code = typeof s === 'string' ? s : s.code;
+                        return code === stop.code;
+                    });
                 },
 
                 getAvailableRoutesForStop(stop) {
@@ -470,26 +598,46 @@
 
                 openManual() {
                     if (this.selectedUser && this.selectedUser.stops) {
-                        this.selectedSearchStops = this.selectedUser.stops.map(s => s.code || s.id);
+                        this.selectedSearchStops = this.selectedUser.stops.map(s => {
+                            const stopId = this.getStopId(s);
+                            const fullName = this.stopNames[stopId] || s.code || s.id;
+                            if (s.routes && s.routes.length > 0) {
+                                return { code: s.code || s.id, routes: s.routes, fullName: fullName };
+                            }
+                            return { code: s.code || s.id, fullName: fullName };
+                        });
                     } else {
                         this.selectedSearchStops = [];
                     }
                     this.showManual = true;
+                    this.selectedRoute = null;
+                    this.selectedRouteStops = [];
+                    this.routeSearchQuery = '';
+                    this.stopSearchQuery = '';
                 },
 
                 createLinkFromSelection() {
                     const newStops = [];
                     
-                    this.selectedSearchStops.forEach(code => {
+                    this.selectedSearchStops.forEach(item => {
+                         const code = typeof item === 'string' ? item : item.code;
+                         const routes = typeof item === 'string' ? [] : item.routes;
+
                          // Preserve existing stop configuration if it was already selected
                          const existingStop = this.selectedUser && this.selectedUser.stops 
                              ? this.selectedUser.stops.find(s => (s.code || s.id) === code)
                              : null;
                          
                          if (existingStop) {
-                             newStops.push(existingStop);
+                             // If it was added via route search, merge routes
+                             if (routes.length > 0) {
+                                 const mergedRoutes = Array.from(new Set([...existingStop.routes, ...routes]));
+                                 newStops.push({ ...existingStop, routes: mergedRoutes });
+                             } else {
+                                 newStops.push(existingStop);
+                             }
                          } else {
-                             newStops.push({ code: code, routes: [] });
+                             newStops.push({ code: code, routes: routes });
                          }
                     });
                     
@@ -503,6 +651,8 @@
                     
                     this.selectedSearchStops = [];
                     this.stopSearchQuery = '';
+                    this.routeSearchQuery = '';
+                    this.selectedRoute = null;
                     this.updateUrl();
                     this.refreshAll();
                     this.startTimers();
