@@ -18,9 +18,9 @@
             transition: outline 0.5s ease;
         }
         /* Prevent iOS zoom on input focus */
-        @media screen and (max-width: 768px) {
-            input.input {
-                font-size: 16px !important;
+        input, select, textarea {
+            @media (width <= 1024px) {
+                font-size: max(1rem, 16px) !important;
             }
         }
     </style>
