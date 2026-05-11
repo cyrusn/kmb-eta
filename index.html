@@ -127,7 +127,7 @@
                                                             <template x-for="(s, index) in routeStops[expandedRouteKey]" :key="s.stop">
                                                                 <span>
                                                                     <span class="is-clickable" @click="s.showCode = !s.showCode">
-                                                                        <span x-text="s.name" :class="index === 0 ? 'has-text-weight-bold' : ''"></span>
+                                                                        <span x-text="s.names[lang] || s.names.tc" :class="index === 0 ? 'has-text-weight-bold' : ''"></span>
                                                                         <span class="has-text-grey" x-show="s.showCode" x-text="' (' + s.code + ')'"></span>
                                                                     </span>
                                                                     <span class="has-text-grey-light mx-1" x-show="index < routeStops[expandedRouteKey].length - 1">→</span>

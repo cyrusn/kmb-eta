@@ -641,16 +641,21 @@
                         if (currentIndex !== -1) {
                             this.routeStops[key] = stopList.slice(currentIndex).map(s => {
                                 const fullStopData = this.stopDataMap[s.stop];
-                                let name = 'Unknown Stop';
+                                const names = { tc: 'Unknown', sc: 'Unknown', en: 'Unknown' };
+                                let code = '';
+
                                 if (fullStopData) {
-                                    if (this.lang === 'tc') name = fullStopData.name_tc;
-                                    else if (this.lang === 'sc') name = fullStopData.name_sc;
-                                    else name = fullStopData.name_en;
+                                    // Extract code from any of the names (usually same across all)
+                                    const match = (fullStopData.name_tc || '').match(/[\(（](.*?)[\)）]\s*$/);
+                                    code = match ? match[1] : '';
+
+                                    // Strip codes from names
+                                    const strip = (n) => (n || '').replace(/[\(（].*?[\)）]\s*$/, '').trim();
+                                    names.tc = strip(fullStopData.name_tc);
+                                    names.sc = strip(fullStopData.name_sc);
+                                    names.en = strip(fullStopData.name_en);
                                 }
-                                const codeMatch = name.match(/[\(（](.*?)[\)）]\s*$/);
-                                const code = codeMatch ? codeMatch[1] : '';
-                                name = name.replace(/[\(（].*?[\)）]\s*$/, '').trim();
-                                return { stop: s.stop, name: name, code: code, showCode: false };
+                                return { stop: s.stop, names, code: code, showCode: false };
                             });
                         } else {
                             this.routeStops[key] = [];
