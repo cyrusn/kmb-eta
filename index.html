@@ -26,7 +26,7 @@
                 <div class="navbar-brand" style="width: 100%;">
                     <div class="navbar-item" style="flex-grow: 1;">
                         <div>
-                            <h1 class="title is-4 mb-1">🚌 KMB Bus ETA</h1>
+                            <h1 class="title is-4 mb-1" x-text="'🚌 ' + dashboardTitle">🚌 KMB Bus ETA</h1>
                             <p class="subtitle is-6 mb-0 is-hidden-mobile">Real-time arrival information for your routes</p>
                         </div>
                     </div>
@@ -340,10 +340,19 @@
                 countdown: 10,
                 timer: null,
                 refreshInterval: null,
+                dashboardTitle: 'KMB Bus ETA',
                 theme: localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'),
 
                 async init() {
                     document.documentElement.setAttribute('data-theme', this.theme);
+                    const urlParams = new URLSearchParams(window.location.search);
+                    
+                    const urlTitle = urlParams.get('title');
+                    if (urlTitle) {
+                        this.dashboardTitle = urlTitle;
+                        document.title = urlTitle + ' - KMB Bus ETA';
+                    }
+
                     try {
                         // 1. Fetch all stops to build code -> id mapping
                         const stopsResp = await fetch('https://data.etabus.gov.hk/v1/transport/kmb/stop/');
@@ -367,8 +376,6 @@
                         const routesJson = await routesResp.json();
                         this.allRoutesList = routesJson.data;
 
-                        const urlParams = new URLSearchParams(window.location.search);
-                        
                         // Parse multiple 'stops=' parameters
                         // e.g. ?stops=KT193:290A+290X&stops=KT108:290A
                         const urlStops = [];
@@ -540,6 +547,11 @@
                     url.searchParams.delete('routes');
                     url.searchParams.delete('stops'); // Clear existing 'stops' to rebuild
                     url.searchParams.delete('user'); // Clean up old user params
+                    url.searchParams.delete('title');
+
+                    if (this.dashboardTitle !== 'KMB Bus ETA') {
+                        url.searchParams.set('title', this.dashboardTitle);
+                    }
 
                     // Set new multiple 'stops' params
                     this.selectedUser.stops.forEach((stop) => {
@@ -926,12 +938,22 @@
                         grouped[key].etas.push(eta);
                     });
 
-                    const result = Object.values(grouped)
-                        .sort((a, b) => a.route.localeCompare(b.route, undefined, {numeric: true, sensitivity: 'base'}));
+                    const result = Object.values(grouped);
                     
                     result.forEach(group => {
                         // Sort ETAs within the group chronologically
                         group.etas.sort((a, b) => new Date(a.eta) - new Date(b.eta));
+                    });
+
+                    // Sort routes by their earliest ETA
+                    result.sort((a, b) => {
+                        const timeA = a.etas.length > 0 ? new Date(a.etas[0].eta).getTime() : Infinity;
+                        const timeB = b.etas.length > 0 ? new Date(b.etas[0].eta).getTime() : Infinity;
+                        
+                        if (timeA === timeB) {
+                            return a.route.localeCompare(b.route, undefined, {numeric: true, sensitivity: 'base'});
+                        }
+                        return timeA - timeB;
                     });
 
                     return result;
