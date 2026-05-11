@@ -14,7 +14,7 @@
         }
         /* Compact Mobile Styles */
         @media screen and (max-width: 768px) {
-            .section { padding: 1rem 0.75rem !important; }
+            .section { padding: 1rem 0.5rem !important; }
             .card-header-title { padding: 0.5rem 0.75rem !important; }
             .card-content .px-5 { padding-left: 0.75rem !important; padding-right: 0.75rem !important; }
             .card-content .py-3 { padding-top: 0.5rem !important; padding-bottom: 0.5rem !important; }
@@ -23,4 +23,15 @@
             .tag.px-3 { padding-left: 0.75rem !important; padding-right: 0.75rem !important; }
             .tag.py-3 { padding-top: 0.5rem !important; padding-bottom: 0.5rem !important; }
             .route-dest-en { display: none !important; } /* Hide English dest to save vertical space */
+            
+            /* Help Page Compactness */
+            .box { padding: 1rem !important; }
+            .title.is-4 { font-size: 1.25rem !important; }
+            .title.is-5 { font-size: 1.1rem !important; }
+            .subtitle.is-5 { font-size: 1.1rem !important; }
+            .mb-4, .mb-5 { margin-bottom: 0.75rem !important; }
+            .mt-5 { margin-top: 1rem !important; }
+            hr { margin: 1rem 0 !important; }
+            .content li + li { margin-top: 0.25em !important; }
+            .panel-block { padding: 0.4em 0.75em !important; }
         }
