@@ -27,7 +27,7 @@
                     <div class="navbar-item" style="flex-grow: 1;">
                         <div>
                             <h1 class="title is-4 mb-1" x-text="'🚌 ' + dashboardTitle">🚌 KMB Bus ETA</h1>
-                            <p class="subtitle is-6 mb-0 is-hidden-mobile">Real-time arrival information for your routes</p>
+                            <p class="subtitle is-6 mb-0 is-hidden-mobile" x-show="dashboardTitle === 'KMB Bus ETA'">Real-time arrival information for your routes</p>
                         </div>
                     </div>
                     <div class="navbar-item">
@@ -44,18 +44,7 @@
             </nav>
 
             <!-- Dashboard Content -->
-            <div x-show="selectedUser && !showManual" x-cloak>
-                <div class="level is-mobile mb-4">
-                    <div class="level-left">
-                    </div>
-                    <div class="level-right">
-                        <p class="last-updated is-size-7">
-                            Refresh in: <span class="tag" :class="theme === 'light' ? 'is-light' : 'is-dark'" x-text="countdown + 's'"></span><br>
-                            Updated: <span x-text="lastUpdated"></span>
-                        </p>
-                    </div>
-                </div>
-
+            <div x-show="selectedUser && !showManual" x-cloak class="pb-6"> <!-- Added padding bottom for sticky footer -->
                 <template x-for="stopGroup in getGroupedStops()" :key="stopGroup.baseName">
                     <div :id="stopGroup.originalIds.join('-')" class="card mb-5">
                         <header class="card-header is-clickable" @click="moveGroupToTop(stopGroup)" :class="theme === 'light' ? 'has-background-warning-light' : 'has-background-warning-dark'">
@@ -119,10 +108,12 @@
                                                     <td>
                                                         <div class="tags are-medium">
                                                             <template x-for="eta in group.etas" :key="eta.eta_seq + '_' + eta.eta">
-                                                                <span class="tag is-flex is-flex-direction-column is-align-items-center py-4" :class="theme === 'light' ? 'is-light' : 'is-dark'" style="height: auto;">
+                                                                <span class="tag is-flex is-flex-direction-column is-align-items-center py-4" 
+                                                                      :class="getETATagClass(eta.eta)" 
+                                                                      style="height: auto;">
                                                                     <strong x-text="formatETA(eta.eta)"></strong>
                                                                     <template x-if="eta.rmk_tc && eta.rmk_tc.trim() !== '' && eta.rmk_tc !== '原定班次'">
-                                                                        <span class="is-size-7 mt-1 has-text-grey" x-text="eta.rmk_tc"></span>
+                                                                        <span class="is-size-7 mt-1" :class="getETARemarkClass(eta.eta)" x-text="eta.rmk_tc"></span>
                                                                     </template>
                                                                 </span>
                                                             </template>
@@ -291,6 +282,14 @@
                                     </span>
                                 </template>
                             </div>
+
+                            <div class="field mt-4">
+                                <label class="label is-small">Custom Dashboard Title (Optional):</label>
+                                <div class="control">
+                                    <input class="input" type="text" placeholder="e.g. My Commute, School..." x-model="dashboardTitleInput">
+                                </div>
+                            </div>
+
                             <button class="button is-link is-fullwidth mt-3" @click="createLinkFromSelection()">
                                 Load Stops & Create Link
                             </button>
@@ -315,7 +314,18 @@
                     </div>
                 </div>
             </div>
-        </section>
+        </div>
+
+        <!-- Sticky Footer for Timer -->
+        <div x-show="selectedUser && !showManual" x-cloak class="is-fixed-bottom w-100 p-2" style="position: fixed; bottom: 0; left: 0; width: 100%; border-top: 1px solid var(--bulma-border); z-index: 30;" :class="theme === 'light' ? 'has-background-white' : 'has-background-black'">
+            <div class="container is-max-desktop has-text-centered">
+                <p class="last-updated is-size-7">
+                    Refresh in: <span class="tag is-small mx-1" :class="theme === 'light' ? 'is-light' : 'is-dark'" x-text="countdown + 's'"></span>
+                    • Updated: <span x-text="lastUpdated"></span>
+                </p>
+            </div>
+        </div>
+    </section>
 
     <script>
         function busApp() {
@@ -341,6 +351,7 @@
                 timer: null,
                 refreshInterval: null,
                 dashboardTitle: 'KMB Bus ETA',
+                dashboardTitleInput: '',
                 theme: localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'),
 
                 async init() {
@@ -350,6 +361,7 @@
                     const urlTitle = urlParams.get('title');
                     if (urlTitle) {
                         this.dashboardTitle = urlTitle;
+                        this.dashboardTitleInput = urlTitle;
                         document.title = urlTitle + ' - KMB Bus ETA';
                     }
 
@@ -633,6 +645,7 @@
                     this.selectedRouteStops = [];
                     this.routeSearchQuery = '';
                     this.stopSearchQuery = '';
+                    this.dashboardTitleInput = this.dashboardTitle === 'KMB Bus ETA' ? '' : this.dashboardTitle;
                 },
 
                 createLinkFromSelection() {
@@ -663,6 +676,9 @@
                         this.selectedUser = null;
                     }
                     
+                    this.dashboardTitle = this.dashboardTitleInput.trim() || 'KMB Bus ETA';
+                    document.title = this.dashboardTitle === 'KMB Bus ETA' ? 'KMB Bus ETA Dashboard' : this.dashboardTitle + ' - KMB Bus ETA';
+
                     this.selectedSearchStops = [];
                     this.stopSearchQuery = '';
                     this.routeSearchQuery = '';
@@ -961,9 +977,30 @@
 
                 formatETA(etaTime) {
                     if (!etaTime) return 'No Data';
-                    const diff = Math.floor((new Date(etaTime) - new Date()) / 60000);
-                    if (diff <= 0) return 'Arriving';
-                    return `${diff} min`;
+                    const diffMs = new Date(etaTime) - new Date();
+                    
+                    if (diffMs <= 0) {
+                        return 'Arrived';
+                    }
+                    // Show "Arriving" if it's 1 minute or less, or rounds to 1 minute (up to 90s)
+                    if (diffMs <= 90000) {
+                        return 'Arriving';
+                    }
+                    const mins = Math.round(diffMs / 60000);
+                    return `${mins} ${mins === 1 ? 'min' : 'mins'}`;
+                },
+
+                getETATagClass(etaTime) {
+                    const status = this.formatETA(etaTime);
+                    if (status === 'Arrived') return 'is-danger';
+                    if (status === 'Arriving') return 'is-success';
+                    return this.theme === 'light' ? 'is-light' : 'is-dark';
+                },
+
+                getETARemarkClass(etaTime) {
+                    const status = this.formatETA(etaTime);
+                    if (status === 'Arrived' || status === 'Arriving') return 'has-text-white';
+                    return 'has-text-grey';
                 }
             }
         }
