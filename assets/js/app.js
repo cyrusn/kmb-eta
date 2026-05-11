@@ -23,16 +23,129 @@
                 dashboardTitle: 'KMB Bus ETA',
                 dashboardTitleInput: '',
                 theme: localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'),
+                lang: localStorage.getItem('lang') || (navigator.language.startsWith('zh') ? 'zh' : 'en'),
+                translations: {
+                    zh: {
+                        dashboardTitle: '九巴到站預報',
+                        subtitle: '即時查詢巴士到站時間',
+                        setupHelp: '設定與幫助',
+                        toggleTheme: '切換深淺模式',
+                        toggleLang: 'English',
+                        findStops: '🔍 尋找及加入巴士站',
+                        searchByRoute: '按路線搜尋',
+                        searchByStop: '按車站搜尋',
+                        routeQuery: '輸入路線 (如 290A, 98...)',
+                        stopQuery: '輸入車站名稱或代碼 (如 創紀之城, KT108...)',
+                        routeResults: '路線搜尋結果',
+                        stopResults: '車站搜尋結果',
+                        stopsFor: '路線車站:',
+                        changeRoute: '更改路線',
+                        outbound: '往',
+                        inbound: '往',
+                        noStopsFound: '找不到相符車站',
+                        selectedStops: '已選擇加入的車站:',
+                        allRoutes: '所有路線',
+                        customTitle: '自定義標題 (選填):',
+                        customTitleHint: '如：我的通勤、學校...',
+                        loadStops: '加載車站並生成連結',
+                        howToUse: '📖 使用指南',
+                        step1: '加入車站：使用上方搜尋框尋找並加入車站到儀表板。',
+                        step2: '過濾路線：點擊路線標籤 (如 290A) 僅顯示該路線。點擊 ... 查看車站所有路線。',
+                        step3: '分享與自定義連結：URL 會自動更新，直接加入書籤即可！',
+                        back: '返回',
+                        refreshIn: '更新倒數:',
+                        updated: '更新時間:',
+                        arrived: '已到站',
+                        arriving: '即將抵達',
+                        min: '分鐘',
+                        mins: '分鐘',
+                        noData: '無資料',
+                        route: '路線',
+                        destination: '目的地',
+                        upcomingBuses: '即將抵達巴士',
+                        code: '代碼',
+                        filter: '過濾:',
+                        loadingStops: '正在加載車站...',
+                        endOfRoute: '路線終點',
+                        subsequentStops: '往後車站:',
+                        noUpcoming: '所選路線暫無即將抵達的巴士',
+                        invalidCode: '無效的車站代碼:'
+                    },
+                    en: {
+                        dashboardTitle: 'KMB Bus ETA',
+                        subtitle: 'Real-time arrival information for your routes',
+                        setupHelp: 'Setup & Help',
+                        toggleTheme: 'Toggle Light/Dark Mode',
+                        toggleLang: '中文',
+                        findStops: '🔍 Find & Add Bus Stops',
+                        searchByRoute: 'Search by Route',
+                        searchByStop: 'Search by Stop',
+                        routeQuery: 'e.g. 290A, 98...',
+                        stopQuery: 'e.g. Millennium City, KT108...',
+                        routeResults: 'Route Results',
+                        stopResults: 'Stop Results',
+                        stopsFor: 'Stops for',
+                        changeRoute: 'Change Route',
+                        outbound: 'To',
+                        inbound: 'To',
+                        noStopsFound: 'No stops found matching your search.',
+                        selectedStops: 'Selected Stops to Add:',
+                        allRoutes: 'All Routes',
+                        customTitle: 'Custom Dashboard Title (Optional):',
+                        customTitleHint: 'e.g. My Commute, School...',
+                        loadStops: 'Load Stops & Create Link',
+                        howToUse: '📖 How to Use',
+                        step1: 'Add Stops: Use the search box above to find and add stops to your dashboard.',
+                        step2: 'Filter Routes: Click the route tags (e.g. 290A) to show only those buses. Click ... to see all routes at a stop.',
+                        step3: 'Share & Custom Links: The URL updates automatically, so you can just bookmark it!',
+                        back: 'Back',
+                        refreshIn: 'Refresh in:',
+                        updated: 'Updated:',
+                        arrived: 'Arrived',
+                        arriving: 'Arriving',
+                        min: 'min',
+                        mins: 'mins',
+                        noData: 'No Data',
+                        route: 'Route',
+                        destination: 'Destination',
+                        upcomingBuses: 'Upcoming Buses',
+                        code: 'Code',
+                        filter: 'Filter:',
+                        loadingStops: 'Loading stops...',
+                        endOfRoute: 'End of route',
+                        subsequentStops: 'Subsequent Stops:',
+                        noUpcoming: 'No upcoming buses for selected routes.',
+                        invalidCode: 'Invalid stop code:'
+                    }
+                },
+
+                t(key) {
+                    return this.translations[this.lang][key] || key;
+                },
+
+                toggleLang() {
+                    this.lang = this.lang === 'zh' ? 'en' : 'zh';
+                    localStorage.setItem('lang', this.lang);
+                    this.updateTitleAndLabels();
+                },
+
+                updateTitleAndLabels() {
+                    if (this.dashboardTitle === 'KMB Bus ETA' || this.dashboardTitle === '九巴到站預報') {
+                        this.dashboardTitle = this.t('dashboardTitle');
+                    }
+                    document.title = (this.dashboardTitle === this.t('dashboardTitle') ? this.t('dashboardTitle') : this.dashboardTitle) + ' - ' + this.t('dashboardTitle');
+                },
 
                 async init() {
                     document.documentElement.setAttribute('data-theme', this.theme);
+                    this.updateTitleAndLabels();
                     const urlParams = new URLSearchParams(window.location.search);
                     
                     const urlTitle = urlParams.get('title');
                     if (urlTitle) {
                         this.dashboardTitle = urlTitle;
                         this.dashboardTitleInput = urlTitle;
-                        document.title = urlTitle + ' - KMB Bus ETA';
+                        document.title = urlTitle + ' - ' + this.t('dashboardTitle');
                     }
 
                     try {
@@ -231,7 +344,7 @@
                     url.searchParams.delete('user'); // Clean up old user params
                     url.searchParams.delete('title');
 
-                    if (this.dashboardTitle !== 'KMB Bus ETA') {
+                    if (this.dashboardTitle !== this.t('dashboardTitle')) {
                         url.searchParams.set('title', this.dashboardTitle);
                     }
 
@@ -270,7 +383,7 @@
                     if (!code) return;
                     const stopCode = code.trim().toUpperCase();
                     if (!this.stopIdMap[stopCode]) {
-                        alert('Invalid stop code: ' + stopCode);
+                        alert(this.t('invalidCode') + ' ' + stopCode);
                         return;
                     }
                     if (!this.selectedUser) {
@@ -315,7 +428,7 @@
                     this.selectedRouteStops = [];
                     this.routeSearchQuery = '';
                     this.stopSearchQuery = '';
-                    this.dashboardTitleInput = this.dashboardTitle === 'KMB Bus ETA' ? '' : this.dashboardTitle;
+                    this.dashboardTitleInput = this.dashboardTitle === this.t('dashboardTitle') ? '' : this.dashboardTitle;
                 },
 
                 createLinkFromSelection() {
@@ -346,8 +459,8 @@
                         this.selectedUser = null;
                     }
                     
-                    this.dashboardTitle = this.dashboardTitleInput.trim() || 'KMB Bus ETA';
-                    document.title = this.dashboardTitle === 'KMB Bus ETA' ? 'KMB Bus ETA Dashboard' : this.dashboardTitle + ' - KMB Bus ETA';
+                    this.dashboardTitle = this.dashboardTitleInput.trim() || this.t('dashboardTitle');
+                    document.title = (this.dashboardTitle === this.t('dashboardTitle') ? this.t('dashboardTitle') : this.dashboardTitle) + ' - ' + this.t('dashboardTitle');
 
                     this.selectedSearchStops = [];
                     this.stopSearchQuery = '';
@@ -476,7 +589,7 @@
                             this.routeStops[key] = stopList.slice(currentIndex).map(s => {
                                 // this.stopDataMap was populated in init() using the full /stop API
                                 const fullStopData = this.stopDataMap[s.stop];
-                                let name = fullStopData ? fullStopData.name_tc : 'Unknown Stop';
+                                let name = fullStopData ? (this.lang === 'zh' ? fullStopData.name_tc : fullStopData.name_en) : 'Unknown Stop';
                                 // Extract the stop code from name (e.g. "NAME (CODE)")
                                 const codeMatch = name.match(/[\(（](.*?)[\)）]\s*$/);
                                 const code = codeMatch ? codeMatch[1] : '';
@@ -615,7 +728,7 @@
                         if (!grouped[key]) {
                             grouped[key] = {
                                 route: eta.route,
-                                dest_tc: eta.dest_tc,
+                                dest_tc: this.lang === 'zh' ? eta.dest_tc : eta.dest_en,
                                 dest_en: eta.dest_en,
                                 service_type: eta.service_type,
                                 etas: []
@@ -646,26 +759,26 @@
                 },
 
                 formatETA(etaTime) {
-                    if (!etaTime) return 'No Data';
+                    if (!etaTime) return this.t('noData');
                     const diffMs = new Date(etaTime) - new Date();
                     
                     if (diffMs <= 0) {
-                        return 'Arrived';
+                        return this.t('arrived');
                     }
                     // Show "Arriving" if it's 1 minute or less, or rounds to 1 minute (up to 90s)
                     if (diffMs <= 90000) {
-                        return 'Arriving';
+                        return this.t('arriving');
                     }
                     const mins = Math.round(diffMs / 60000);
-                    return `${mins} ${mins === 1 ? 'min' : 'mins'}`;
+                    return `${mins} ${mins === 1 ? this.t('min') : this.t('mins')}`;
                 },
 
                 getETATagClass(etaTime) {
                     const status = this.formatETA(etaTime);
                     const lightSuffix = this.theme === 'light' ? ' is-light' : '';
                     
-                    if (status === 'Arrived') return 'is-danger' + lightSuffix;
-                    if (status === 'Arriving') return 'is-success' + lightSuffix;
+                    if (status === this.t('arrived')) return 'is-danger' + lightSuffix;
+                    if (status === this.t('arriving')) return 'is-success' + lightSuffix;
                     return this.theme === 'light' ? 'is-light' : 'is-dark';
                 }
             }

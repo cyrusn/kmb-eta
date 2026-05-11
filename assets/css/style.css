@@ -6,32 +6,71 @@
             outline-offset: 2px;
             transition: outline 0.5s ease;
         }
+        
+        /* Filter Chips */
+        .filter-chip {
+            transition: all 0.2s ease;
+            user-select: none;
+            border: 1px solid transparent;
+        }
+        .filter-chip.is-light.is-outlined {
+            background-color: transparent !important;
+            border-color: var(--bulma-border);
+            color: var(--bulma-text);
+            opacity: 0.6;
+        }
+        .filter-chip:hover {
+            opacity: 1;
+        }
+
         /* Prevent iOS zoom on input focus */
         input, select, textarea {
             @media (width <= 1024px) {
                 font-size: max(1rem, 16px) !important;
             }
         }
+        
+        /* Desktop compactness */
+        .table td, .table th { padding: 0.75rem 0.5rem; }
+        .card-header-title { padding: 0.75rem 1rem; }
+
         /* Compact Mobile Styles */
         @media screen and (max-width: 768px) {
-            .section { padding: 1rem 0.5rem !important; }
-            .card-header-title { padding: 0.5rem 0.75rem !important; }
-            .card-content .px-5 { padding-left: 0.75rem !important; padding-right: 0.75rem !important; }
+            .section { padding: 0.75rem 0.5rem !important; }
+            .card { margin-bottom: 1rem !important; }
+            .card-header-title { padding: 0.5rem 0.75rem !important; font-size: 0.95rem; }
+            .card-content .px-5 { padding-left: 0.5rem !important; padding-right: 0.5rem !important; }
             .card-content .py-3 { padding-top: 0.5rem !important; padding-bottom: 0.5rem !important; }
             .table td, .table th { padding: 0.5rem 0.25rem !important; }
-            .tags.are-medium .tag, .tag.is-medium { font-size: 0.85rem !important; height: 1.75em !important; padding-left: 0.5em !important; padding-right: 0.5em !important; }
-            .tag.px-3 { padding-left: 0.75rem !important; padding-right: 0.75rem !important; }
-            .tag.py-3 { padding-top: 0.5rem !important; padding-bottom: 0.5rem !important; }
+            
+            /* Tighten ETA tags */
+            .tags.are-medium .tag, .tag.is-medium { 
+                font-size: 0.8rem !important; 
+                height: 1.6rem !important; 
+                padding-left: 0.4rem !important; 
+                padding-right: 0.4rem !important;
+                margin-bottom: 0.25rem !important;
+            }
+            .tags.are-medium:last-child { margin-bottom: -0.25rem; }
+            
             .route-dest-en { display: none !important; } /* Hide English dest to save vertical space */
             
             /* Help Page Compactness */
-            .box { padding: 1rem !important; }
-            .title.is-4 { font-size: 1.25rem !important; }
-            .title.is-5 { font-size: 1.1rem !important; }
-            .subtitle.is-5 { font-size: 1.1rem !important; }
-            .mb-4, .mb-5 { margin-bottom: 0.75rem !important; }
-            .mt-5 { margin-top: 1rem !important; }
-            hr { margin: 1rem 0 !important; }
-            .content li + li { margin-top: 0.25em !important; }
-            .panel-block { padding: 0.4em 0.75em !important; }
+            .box { padding: 0.75rem !important; }
+            .title.is-4 { font-size: 1.15rem !important; }
+            .title.is-5 { font-size: 1rem !important; }
+            .subtitle.is-5 { font-size: 1rem !important; }
+            .mb-4, .mb-5 { margin-bottom: 0.5rem !important; }
+            .mt-5 { margin-top: 0.75rem !important; }
+            hr { margin: 0.75rem 0 !important; }
+            .content li + li { margin-top: 0.15em !important; }
+            .panel-block { padding: 0.35em 0.5em !important; font-size: 0.85rem; }
+            .tabs.is-small { font-size: 0.75rem; }
+            
+            /* Selection preview tags */
+            .box .tags.is-centered .tag {
+                padding: 0.4rem 0.6rem !important;
+                min-width: 100px !important;
+                font-size: 0.7rem !important;
+            }
         }
