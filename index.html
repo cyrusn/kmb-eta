@@ -262,15 +262,15 @@
                         <!-- Selected Stops Preview -->
                         <div class="box mb-5" x-show="selectedSearchStops.length > 0 && searchMode !== 'lang'">
                             <p class="is-size-7 mb-2 has-text-weight-bold" x-text="t('selectedStops')"></p>
-                            <div class="tags is-centered">
+                            <div class="panel">
                                 <template x-for="item in selectedSearchStops" :key="item.code + (item.route || '')">
-                                    <span class="tag is-primary is-flex is-flex-direction-column is-align-items-center py-2 px-3 h-auto min-width-100">
-                                        <div class="is-flex is-align-items-center is-justify-content-center w-100">
-                                            <span class="has-text-weight-bold is-size-7" x-text="item.fullName"></span>
-                                            <button class="delete is-small ml-2" @click.stop="selectedSearchStops = selectedSearchStops.filter(i => i !== item)"></button>
+                                    <div class="panel-block is-flex is-align-items-center is-justify-content-space-between">
+                                        <div class="is-flex is-align-items-center">
+                                            <input type="checkbox" checked @change="selectedSearchStops = selectedSearchStops.filter(i => i !== item)" class="mr-2">
+                                            <span class="is-size-7 has-text-weight-semibold" x-text="item.fullName"></span>
                                         </div>
-                                        <div class="is-size-7 mt-0 opacity-09" x-text="item.route || t('allRoutes')"></div>
-                                    </span>
+                                        <span class="tag is-info is-light" x-text="item.route || t('allRoutes')"></span>
+                                    </div>
                                 </template>
                             </div>
                             <div class="field mt-4">
