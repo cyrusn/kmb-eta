@@ -4,18 +4,21 @@ A simple, lightweight, and customizable dashboard to view Estimated Time of Arri
 
 ## Features
 
-* **Live ETA Updates:** Automatically fetches and refreshes ETA data.
-* **Stop Grouping:** Organizes ETAs by bus stop locations for a cleaner view.
-* **Route Filtering:** Filter and display only the specific routes you care about for each stop.
-* **Subsequent Stops:** Click on a route's tag to view the remaining stops on its journey (click on the stop name to toggle its bus stop code).
-* **URL-based Configuration:** Save and share your specific stops and filters easily by bookmarking the URL.
-* **Dark/Light Theme:** Automatically adapts to your system preferences.
+* **Multi-Language Support (i18n):** Supports Traditional Chinese, Simplified Chinese, and English. Language preference is persisted in the URL and local storage.
+* **Live ETA Updates:** Automatically fetches and refreshes ETA data every 10 seconds.
+* **Individual Stop Cards:** Each added bus stop is displayed as its own card with the stop code included in the title for clarity.
+* **Route Filtering:** Redesigned collapsible filter with tag chips to display only the specific routes you care about for each stop.
+* **Subsequent Stops:** Click on a route tag (e.g., `290A`) to view the remaining stops on its journey. Click on any stop name in the list to reveal its unique bus stop code.
+* **URL-based Configuration:** Save and share your dashboard by bookmarking the URL. All settings (stops, routes, title, and language) are encoded in the query parameters.
+* **Dark/Light Theme:** Responsive design that adapts to your system preferences or can be toggled manually.
 
 ## Usage
 
-You can search for stops and configure your dashboard directly through the web interface using the "🔍 Find & Add Bus Stops" section. Alternatively, you can configure your dashboard directly via URL parameters.
+You can search for stops and configure your dashboard through the web interface in the "Setup & Help" section (ℹ️ icon). The dashboard provides two search modes:
+1. **Search by Route:** Find a specific bus route and select stops along its path.
+2. **Search by Stop:** Search for stops directly by name or code.
 
-### URL Configuration Examples:
+### URL Configuration Examples
 
 * **Add multiple stops:** Use the `stops=` parameter.
   ```text
@@ -25,16 +28,18 @@ You can search for stops and configure your dashboard directly through the web i
   ```text
   ?stops=KT108:290A+290X
   ```
-* **Combine them:** 
+* **Set Language:** Use the `lang=` parameter (`tc`, `sc`, or `en`).
   ```text
-  ?stops=KT108:290A&stops=KT193:290A+290X
+  ?lang=en&stops=KT108:290A
+  ```
+* **Custom Title:** Use the `title=` parameter.
+  ```text
+  ?title=My+Commute&stops=KT108:290A
   ```
 
 ## Deployment (GitHub Pages)
 
-This project is a static single-page application consisting primarily of an `index.html` file.
-
-**It is deployed directly from the `main` branch using GitHub Pages.** You do not need to maintain or push to a separate `gh-pages` branch.
+This project is a static single-page application. **It is deployed directly from the `main` branch using GitHub Pages.**
 
 To set this up in GitHub:
 1. Go to your repository **Settings**.

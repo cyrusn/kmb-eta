@@ -23,14 +23,14 @@
                 dashboardTitle: 'KMB Bus ETA',
                 dashboardTitleInput: '',
                 theme: localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'),
-                lang: localStorage.getItem('lang') || (navigator.language.startsWith('zh') ? 'zh' : 'en'),
+                lang: 'tc', // Default
                 translations: {
-                    zh: {
+                    tc: {
                         dashboardTitle: '九巴到站預報',
                         subtitle: '即時查詢巴士到站時間',
                         setupHelp: '設定與幫助',
                         toggleTheme: '切換深淺模式',
-                        toggleLang: 'English',
+                        language: '語言 / Language',
                         findStops: '🔍 尋找及加入巴士站',
                         searchByRoute: '按路線搜尋',
                         searchByStop: '按車站搜尋',
@@ -49,8 +49,18 @@
                         customTitleHint: '如：我的通勤、學校...',
                         loadStops: '加載車站並生成連結',
                         howToUse: '📖 使用指南',
-                        step1: '加入車站：使用上方搜尋框尋找並加入車站到儀表板。',
-                        step2: '過濾路線：點擊路線標籤 (如 290A) 僅顯示該路線。點擊 ... 查看車站所有路線。',
+                        instr_route_title: '如何按路線加入？',
+                        instr_route_step1: '在上方輸入巴士路線編號（如 290A）。',
+                        instr_route_step2: '從結果中選擇正確的方向及服務類型。',
+                        instr_route_step3: '在下方的車站列表中勾選您感興趣的車站。',
+                        instr_stop_title: '如何按車站加入？',
+                        instr_stop_step1: '在上方輸入車站名稱或代碼（如 創紀之城 或 KT108）。',
+                        instr_stop_step2: '從搜尋結果中勾選您感興趣的車站。',
+                        instr_stop_step3: '勾選後，車站會自動加入到下方的預覽列表中。',
+                        instr_lang_title: '語言設定',
+                        instr_lang_step1: '您可以隨時切換繁體中文、簡體中文或英文。',
+                        instr_lang_step2: '語言偏好會儲存在瀏覽器中，並會反映在 URL 連結中。',
+                        instr_lang_step3: '分享連結給他人時，他們也會看到您選擇的語言。',
                         step3: '分享與自定義連結：URL 會自動更新，直接加入書籤即可！',
                         back: '返回',
                         refreshIn: '更新倒數:',
@@ -64,19 +74,79 @@
                         destination: '目的地',
                         upcomingBuses: '即將抵達巴士',
                         code: '代碼',
-                        filter: '過濾:',
+                        filter: '路線過濾',
                         loadingStops: '正在加載車站...',
                         endOfRoute: '路線終點',
                         subsequentStops: '往後車站:',
                         noUpcoming: '所選路線暫無即將抵達的巴士',
-                        invalidCode: '無效的車站代碼:'
+                        invalidCode: '無效的車站代碼:',
+                        showAll: '顯示全部',
+                        hideAll: '取消全部'
+                    },
+                    sc: {
+                        dashboardTitle: '九巴到站预报',
+                        subtitle: '即时查询巴士到站时间',
+                        setupHelp: '设置与帮助',
+                        toggleTheme: '切换深浅模式',
+                        language: '语言 / Language',
+                        findStops: '🔍 寻找及加入巴士站',
+                        searchByRoute: '按路线搜寻',
+                        searchByStop: '按车站搜寻',
+                        routeQuery: '输入路线 (如 290A, 98...)',
+                        stopQuery: '输入车站名称或代码 (如 创纪之城, KT108...)',
+                        routeResults: '路线搜寻结果',
+                        stopResults: '车站搜寻结果',
+                        stopsFor: '路线车站:',
+                        changeRoute: '更改路线',
+                        outbound: '往',
+                        inbound: '往',
+                        noStopsFound: '找不到相符车站',
+                        selectedStops: '已选择加入的车站:',
+                        allRoutes: '所有路线',
+                        customTitle: '自定义标题 (选填):',
+                        customTitleHint: '如：我的通勤、学校...',
+                        loadStops: '加载车站并生成链接',
+                        howToUse: '📖 使用指南',
+                        instr_route_title: '如何按路线加入？',
+                        instr_route_step1: '在上方输入巴士路线编号（如 290A）。',
+                        instr_route_step2: '从结果中选择正确的方向及服务类型。',
+                        instr_route_step3: '在下方的车站列表中勾选您感兴趣的车站。',
+                        instr_stop_title: '如何按车站加入？',
+                        instr_stop_step1: '在上方输入车站名称或代码（如 创纪之城 或 KT108）。',
+                        instr_stop_step2: '从搜寻结果中勾选您感兴趣的车站。',
+                        instr_stop_step3: '勾选后，车站会自动加入到下方的预览列表中。',
+                        instr_lang_title: '语言设置',
+                        instr_lang_step1: '您可以随时切换繁体中文、简体中文或英文。',
+                        instr_lang_step2: '语言偏好会储存在浏览器中，并会反映在 URL 链接中。',
+                        instr_lang_step3: '分享链接给他人时，他们也会看到您选择的语言。',
+                        step3: '分享与自定义链接：URL 会自动更新，直接加入书签即可！',
+                        back: '返回',
+                        refreshIn: '更新倒数:',
+                        updated: '更新时间:',
+                        arrived: '已到站',
+                        arriving: '即将抵达',
+                        min: '分钟',
+                        mins: '分钟',
+                        noData: '无资料',
+                        route: '路线',
+                        destination: '目的地',
+                        upcomingBuses: '即将抵达巴士',
+                        code: '代码',
+                        filter: '路线过滤',
+                        loadingStops: '正在加载车站...',
+                        endOfRoute: '路线终点',
+                        subsequentStops: '往后车站:',
+                        noUpcoming: '所选路线暂无即将抵达的巴士',
+                        invalidCode: '无效的车站代码:',
+                        showAll: '显示全部',
+                        hideAll: '取消全部'
                     },
                     en: {
                         dashboardTitle: 'KMB Bus ETA',
                         subtitle: 'Real-time arrival information for your routes',
                         setupHelp: 'Setup & Help',
                         toggleTheme: 'Toggle Light/Dark Mode',
-                        toggleLang: '中文',
+                        language: 'Language / 語言',
                         findStops: '🔍 Find & Add Bus Stops',
                         searchByRoute: 'Search by Route',
                         searchByStop: 'Search by Stop',
@@ -95,8 +165,18 @@
                         customTitleHint: 'e.g. My Commute, School...',
                         loadStops: 'Load Stops & Create Link',
                         howToUse: '📖 How to Use',
-                        step1: 'Add Stops: Use the search box above to find and add stops to your dashboard.',
-                        step2: 'Filter Routes: Click the route tags (e.g. 290A) to show only those buses. Click ... to see all routes at a stop.',
+                        instr_route_title: 'How to add by Route?',
+                        instr_route_step1: 'Enter the bus route number (e.g., 290A) above.',
+                        instr_route_step2: 'Select the correct direction and service type from the results.',
+                        instr_route_step3: 'Check the stops you are interested in from the list below.',
+                        instr_stop_title: 'How to add by Stop?',
+                        instr_stop_step1: 'Enter the stop name or code (e.g., Millennium City or KT108) above.',
+                        instr_stop_step2: 'Check the stops you want from the search results.',
+                        instr_stop_step3: 'Stops will be automatically added to the preview list below.',
+                        instr_lang_title: 'Language Settings',
+                        instr_lang_step1: 'You can switch between Traditional Chinese, Simplified Chinese, or English.',
+                        instr_lang_step2: 'Language preference is stored in your browser and reflected in the URL.',
+                        instr_lang_step3: 'When sharing the link, others will see the language you selected.',
                         step3: 'Share & Custom Links: The URL updates automatically, so you can just bookmark it!',
                         back: 'Back',
                         refreshIn: 'Refresh in:',
@@ -110,12 +190,14 @@
                         destination: 'Destination',
                         upcomingBuses: 'Upcoming Buses',
                         code: 'Code',
-                        filter: 'Filter:',
+                        filter: 'Route Filter',
                         loadingStops: 'Loading stops...',
                         endOfRoute: 'End of route',
                         subsequentStops: 'Subsequent Stops:',
                         noUpcoming: 'No upcoming buses for selected routes.',
-                        invalidCode: 'Invalid stop code:'
+                        invalidCode: 'Invalid stop code:',
+                        showAll: 'Show All',
+                        hideAll: 'Clear All'
                     }
                 },
 
@@ -123,14 +205,15 @@
                     return this.translations[this.lang][key] || key;
                 },
 
-                toggleLang() {
-                    this.lang = this.lang === 'zh' ? 'en' : 'zh';
+                setLang(l) {
+                    this.lang = l;
                     localStorage.setItem('lang', this.lang);
                     this.updateTitleAndLabels();
+                    this.updateUrl();
                 },
 
                 updateTitleAndLabels() {
-                    if (this.dashboardTitle === 'KMB Bus ETA' || this.dashboardTitle === '九巴到站預報') {
+                    if (this.dashboardTitle === 'KMB Bus ETA' || this.dashboardTitle === '九巴到站預報' || this.dashboardTitle === '九巴到站预报') {
                         this.dashboardTitle = this.t('dashboardTitle');
                     }
                     document.title = (this.dashboardTitle === this.t('dashboardTitle') ? this.t('dashboardTitle') : this.dashboardTitle) + ' - ' + this.t('dashboardTitle');
@@ -138,8 +221,27 @@
 
                 async init() {
                     document.documentElement.setAttribute('data-theme', this.theme);
-                    this.updateTitleAndLabels();
+                    
                     const urlParams = new URLSearchParams(window.location.search);
+                    
+                    // Priority: URL > LocalStorage > Browser > Default
+                    const urlLang = urlParams.get('lang');
+                    if (['tc', 'sc', 'en'].includes(urlLang)) {
+                        this.lang = urlLang;
+                    } else {
+                        const storedLang = localStorage.getItem('lang');
+                        if (['tc', 'sc', 'en'].includes(storedLang)) {
+                            this.lang = storedLang;
+                        } else {
+                            const browserLang = navigator.language.toLowerCase();
+                            if (browserLang.startsWith('zh-cn') || browserLang.startsWith('zh-sg')) this.lang = 'sc';
+                            else if (browserLang.startsWith('zh')) this.lang = 'tc';
+                            else this.lang = 'en';
+                        }
+                    }
+                    localStorage.setItem('lang', this.lang);
+                    
+                    this.updateTitleAndLabels();
                     
                     const urlTitle = urlParams.get('title');
                     if (urlTitle) {
@@ -172,7 +274,6 @@
                         this.allRoutesList = routesJson.data;
 
                         // Parse multiple 'stops=' parameters
-                        // e.g. ?stops=KT193:290A+290X&stops=KT108:290A
                         const urlStops = [];
                         const stopsParams = urlParams.getAll('stops');
                         
@@ -225,7 +326,7 @@
                                (s.name_en && s.name_en.toLowerCase().includes(query)) ||
                                (s.name_sc && s.name_sc.toLowerCase().includes(query)) ||
                                code.includes(query);
-                    }).slice(0, 10); // Limit to top 10 results for performance
+                    }).slice(0, 10);
                 },
 
                 getFilteredRoutes() {
@@ -314,41 +415,18 @@
                     this.updateUrl();
                 },
 
-                getAvailableRoutesForGroup(stopGroup) {
-                    // Deprecated: Template now uses per-stop filtering
-                    return [];
-                },
-
-                isRouteActive(route, stopGroup) {
-                    // Deprecated: Template now uses per-stop filtering
-                    return true;
-                },
-
-                toggleRouteFilter(route, stopGroup) {
-                    // Deprecated: Template now uses per-stop filtering
-                },
-
                 updateUrl() {
                     if (!this.selectedUser) return;
                     const url = new URL(window.location.origin + window.location.pathname);
                     
-                    // Clear old indexed params (just in case they exist)
-                    for (let key of Array.from(url.searchParams.keys())) {
-                        if (key.startsWith('bus_stop[') || key.startsWith('routes[')) {
-                            url.searchParams.delete(key);
-                        }
-                    }
-                    url.searchParams.delete('bus_stops');
-                    url.searchParams.delete('routes');
-                    url.searchParams.delete('stops'); // Clear existing 'stops' to rebuild
-                    url.searchParams.delete('user'); // Clean up old user params
+                    url.searchParams.delete('stops');
                     url.searchParams.delete('title');
+                    url.searchParams.set('lang', this.lang);
 
                     if (this.dashboardTitle !== this.t('dashboardTitle')) {
                         url.searchParams.set('title', this.dashboardTitle);
                     }
 
-                    // Set new multiple 'stops' params
                     this.selectedUser.stops.forEach((stop) => {
                         let stopParam = stop.code || stop.id;
                         if (stop.routes && stop.routes.length > 0) {
@@ -357,7 +435,6 @@
                         url.searchParams.append('stops', stopParam);
                     });
                     
-                    // Manually decode the URL to keep it readable for the user (decode %3A to : and %2B to +)
                     let finalUrlStr = url.toString().replace(/%3A/g, ':').replace(/%2B/g, '+');
                     window.history.pushState(null, '', finalUrlStr);
                 },
@@ -390,7 +467,6 @@
                         this.selectedUser = { stops: [] };
                     }
                     
-                    // Prevent duplicate stops
                     if (this.selectedUser.stops.some(s => (s.code || s.id) === stopCode)) {
                         this.newStopCode = '';
                         return;
@@ -410,7 +486,7 @@
                             const stopId = this.getStopId(s);
                             let fullName = s.code || s.id;
                             if (this.stopNames[stopId]) {
-                                fullName = this.stopNames[stopId][this.lang] || this.stopNames[stopId].zh;
+                                fullName = this.stopNames[stopId][this.lang] || this.stopNames[stopId].tc;
                             }
                             const code = s.code || s.id;
                             
@@ -463,8 +539,7 @@
                     }
                     
                     this.dashboardTitle = this.dashboardTitleInput.trim() || this.t('dashboardTitle');
-                    document.title = (this.dashboardTitle === this.t('dashboardTitle') ? this.t('dashboardTitle') : this.dashboardTitle) + ' - ' + this.t('dashboardTitle');
-
+                    this.updateTitleAndLabels();
                     this.selectedSearchStops = [];
                     this.stopSearchQuery = '';
                     this.routeSearchQuery = '';
@@ -476,18 +551,10 @@
 
                 moveGroupToTop(stopGroup) {
                     if (!this.selectedUser || !this.selectedUser.stops) return;
-                    
-                    // Identify the stops in this group
                     const stopsInGroup = stopGroup.stops;
-                    
-                    // Reorder: Move these stops to the front of the array
                     const otherStops = this.selectedUser.stops.filter(s => !stopsInGroup.includes(s));
                     this.selectedUser.stops = [...stopsInGroup, ...otherStops];
-                    
-                    // Update the URL to persist the new order
                     this.updateUrl();
-                    
-                    // Scroll so the header of this card is at the very top of the viewport
                     this.$nextTick(() => {
                         const cardId = stopGroup.originalIds.join('-');
                         const element = document.getElementById(cardId);
@@ -499,8 +566,6 @@
 
                 startTimers() {
                     this.stopTimers();
-                    
-                    // Countdown timer
                     this.timer = setInterval(() => {
                         if (this.countdown > 1) {
                             this.countdown--;
@@ -508,8 +573,6 @@
                             this.countdown = 10;
                         }
                     }, 1000);
-
-                    // Refresh interval
                     this.refreshInterval = setInterval(() => {
                         this.refreshAll();
                     }, 10000);
@@ -522,7 +585,6 @@
 
                 async refreshAll() {
                     if (!this.selectedUser) return;
-                    
                     for (const stop of this.selectedUser.stops) {
                         const stopId = this.getStopId(stop);
                         if (stopId) {
@@ -544,14 +606,12 @@
                 },
 
                 async toggleRouteStops(group, currentStopId) {
-                    const key = `${group.route}_${group.dest_tc}_${group.service_type}_${currentStopId}`;
+                    const key = `${group.route}_${group.orig_dest}_${group.service_type}_${currentStopId}`;
                     if (this.expandedRouteKey === key) {
                         this.expandedRouteKey = null;
                         return;
                     }
-                    
                     this.expandedRouteKey = key;
-                    
                     if (!this.routeStops[key]) {
                         await this.fetchRouteStops(group, currentStopId, key);
                     }
@@ -559,54 +619,41 @@
 
                 async fetchRouteStops(group, currentStopId, key) {
                     try {
-                        // 1. Find the correct bound (O/I) from the cached routes list
                         if (!this.allRoutesList || this.allRoutesList.length === 0) {
-                            // Fallback if not yet loaded
                             const routeResp = await fetch(`https://data.etabus.gov.hk/v1/transport/kmb/route/`);
                             const routeJson = await routeResp.json();
                             this.allRoutesList = routeJson.data;
                         }
-
                         const boundInfo = this.allRoutesList.find(r => 
                             r.route === group.route &&
-                            r.dest_tc === group.dest_tc && 
+                            r.dest_tc === group.orig_dest && 
                             parseInt(r.service_type) === group.service_type
                         );
-                        
                         if (!boundInfo) {
                             console.warn("Could not find bound info for", group);
                             return;
                         }
-                        
                         const direction = boundInfo.bound === 'O' ? 'outbound' : 'inbound';
-
-                        // 2. Fetch stops for this route variation
                         const stopsResp = await fetch(`https://data.etabus.gov.hk/v1/transport/kmb/route-stop/${group.route}/${direction}/${group.service_type}`);
                         const stopsJson = await stopsResp.json();
-                        
-                        // 3. Find current stop sequence and filter remaining
                         const stopList = stopsJson.data;
                         const currentIndex = stopList.findIndex(s => s.stop === currentStopId);
-                        
                         if (currentIndex !== -1) {
                             this.routeStops[key] = stopList.slice(currentIndex).map(s => {
-                                // this.stopDataMap was populated in init() using the full /stop API
                                 const fullStopData = this.stopDataMap[s.stop];
-                                let name = fullStopData ? (this.lang === 'zh' ? fullStopData.name_tc : fullStopData.name_en) : 'Unknown Stop';
-                                // Extract the stop code from name (e.g. "NAME (CODE)")
+                                let name = 'Unknown Stop';
+                                if (fullStopData) {
+                                    if (this.lang === 'tc') name = fullStopData.name_tc;
+                                    else if (this.lang === 'sc') name = fullStopData.name_sc;
+                                    else name = fullStopData.name_en;
+                                }
                                 const codeMatch = name.match(/[\(（](.*?)[\)）]\s*$/);
                                 const code = codeMatch ? codeMatch[1] : '';
-                                // Strip the stop code in parentheses
                                 name = name.replace(/[\(（].*?[\)）]\s*$/, '').trim();
-                                return {
-                                    stop: s.stop,
-                                    name: name,
-                                    code: code,
-                                    showCode: false
-                                };
+                                return { stop: s.stop, name: name, code: code, showCode: false };
                             });
                         } else {
-                            this.routeStops[key] = []; // Current stop not found on this route
+                            this.routeStops[key] = [];
                         }
                     } catch (e) {
                         console.error('Failed to fetch route stops', e);
@@ -614,23 +661,22 @@
                 },
 
                 async fetchStopName(stopId) {
-                    if (this.stopNames[stopId]) return; // Already fetched
-                    
-                    // First check if we already have it in stopDataMap
+                    if (this.stopNames[stopId]) return;
                     if (this.stopDataMap[stopId]) {
                         this.stopNames[stopId] = {
-                            zh: this.stopDataMap[stopId].name_tc,
+                            tc: this.stopDataMap[stopId].name_tc,
+                            sc: this.stopDataMap[stopId].name_sc,
                             en: this.stopDataMap[stopId].name_en
                         };
                         return;
                     }
-
                     try {
                         const resp = await fetch(`https://data.etabus.gov.hk/v1/transport/kmb/stop/${stopId}`);
                         const json = await resp.json();
                         if (json.data) {
                             this.stopNames[stopId] = {
-                                zh: json.data.name_tc,
+                                tc: json.data.name_tc,
+                                sc: json.data.name_sc,
                                 en: json.data.name_en
                             };
                         }
@@ -644,121 +690,72 @@
                     return this.selectedUser.stops.map(stop => {
                         const stopId = this.getStopId(stop);
                         if (!stopId) return null;
-
                         let displayName = 'Loading...';
-                        
                         if (this.stopNames[stopId]) {
-                            // Support new object format containing both languages
-                            displayName = this.stopNames[stopId][this.lang] || this.stopNames[stopId].zh;
+                            displayName = this.stopNames[stopId][this.lang] || this.stopNames[stopId].tc;
                         }
-
-                        // Ensure the stop code is always visible in the title
                         if (displayName !== 'Loading...' && stop.code) {
                             const codeStr = stop.code.toUpperCase();
                             if (!displayName.includes(codeStr)) {
                                 displayName = `${displayName} (${codeStr})`;
                             }
                         }
-
-                        return {
-                            originalIds: [stopId],
-                            name: displayName,
-                            stops: [stop]
-                        };
+                        return { originalIds: [stopId], name: displayName, stops: [stop], filterOpen: false };
                     }).filter(Boolean);
                 },
 
                 getGroupedETAForStops(stops) {
                     let allFiltered = [];
-                    
                     for (const stop of stops) {
                         const stopId = this.getStopId(stop);
                         if (!stopId) continue;
                         const data = this.etaData[stopId] || [];
-                        
-                        // Filter by specific routes if defined, AND ensure 'eta' exists
                         const filtered = data.filter(item => {
-                            let isRequestedRoute = stop.routes && stop.routes.length > 0 
-                                ? stop.routes.includes(item.route.toUpperCase()) 
-                                : true;
-                            
-                            // Apply URL route filter if it exists
-                            if (this.urlRouteFilter.length > 0) {
-                                isRequestedRoute = isRequestedRoute && this.urlRouteFilter.includes(item.route.toUpperCase());
-                            }
-
-                            const hasEtaTime = item.eta !== null && item.eta !== '';
-                            return isRequestedRoute && hasEtaTime;
+                            let isRequestedRoute = stop.routes && stop.routes.length > 0 ? stop.routes.includes(item.route.toUpperCase()) : true;
+                            if (this.urlRouteFilter.length > 0) isRequestedRoute = isRequestedRoute && this.urlRouteFilter.includes(item.route.toUpperCase());
+                            return isRequestedRoute && item.eta !== null && item.eta !== '';
                         });
                         allFiltered = allFiltered.concat(filtered);
                     }
-                    
-                    // Deduplicate by Route + Destination + EXACT ETA time across all stops.
-                    // If multiple service types have the exact same ETA, keep only the one with the smallest service_type.
                     const uniqueEtasMap = new Map();
-                    
                     allFiltered.forEach(eta => {
-                        // Key includes exact timestamp to catch same-time arrivals
                         const uniqueKey = `${eta.route}_${eta.dest_tc}_${eta.eta}`;
-                        
-                        if (!uniqueEtasMap.has(uniqueKey)) {
-                            uniqueEtasMap.set(uniqueKey, eta);
-                        } else {
-                            const existing = uniqueEtasMap.get(uniqueKey);
-                            if (eta.service_type < existing.service_type) {
-                                uniqueEtasMap.set(uniqueKey, eta);
-                            }
-                        }
+                        if (!uniqueEtasMap.has(uniqueKey)) uniqueEtasMap.set(uniqueKey, eta);
+                        else if (eta.service_type < uniqueEtasMap.get(uniqueKey).service_type) uniqueEtasMap.set(uniqueKey, eta);
                     });
-
-                    // Now group the unique ETAs by Route + Destination + Service Type for display
                     const grouped = {};
                     Array.from(uniqueEtasMap.values()).forEach(eta => {
                         const key = `${eta.route}_${eta.dest_tc}_${eta.service_type}`;
                         if (!grouped[key]) {
+                            let dest = eta.dest_en;
+                            if (this.lang === 'tc') dest = eta.dest_tc;
+                            else if (this.lang === 'sc') dest = eta.dest_sc;
                             grouped[key] = {
                                 route: eta.route,
-                                dest_tc: this.lang === 'zh' ? eta.dest_tc : eta.dest_en,
-                                dest_en: eta.dest_en,
+                                dest: dest,
+                                orig_dest: eta.dest_tc, // For stable expansion key
                                 service_type: eta.service_type,
                                 etas: []
                             };
                         }
                         grouped[key].etas.push(eta);
                     });
-
                     const result = Object.values(grouped);
-                    
-                    result.forEach(group => {
-                        // Sort ETAs within the group chronologically
-                        group.etas.sort((a, b) => new Date(a.eta) - new Date(b.eta));
-                    });
-
-                    // Sort routes by their earliest ETA
+                    result.forEach(group => group.etas.sort((a, b) => new Date(a.eta) - new Date(b.eta)));
                     result.sort((a, b) => {
                         const timeA = a.etas.length > 0 ? new Date(a.etas[0].eta).getTime() : Infinity;
                         const timeB = b.etas.length > 0 ? new Date(b.etas[0].eta).getTime() : Infinity;
-                        
-                        if (timeA === timeB) {
-                            return a.route.localeCompare(b.route, undefined, {numeric: true, sensitivity: 'base'});
-                        }
+                        if (timeA === timeB) return a.route.localeCompare(b.route, undefined, {numeric: true, sensitivity: 'base'});
                         return timeA - timeB;
                     });
-
                     return result;
                 },
 
                 formatETA(etaTime) {
                     if (!etaTime) return this.t('noData');
                     const diffMs = new Date(etaTime) - new Date();
-                    
-                    if (diffMs <= 0) {
-                        return this.t('arrived');
-                    }
-                    // Show "Arriving" if it's 1 minute or less, or rounds to 1 minute (up to 90s)
-                    if (diffMs <= 90000) {
-                        return this.t('arriving');
-                    }
+                    if (diffMs <= 0) return this.t('arrived');
+                    if (diffMs <= 90000) return this.t('arriving');
                     const mins = Math.round(diffMs / 60000);
                     return `${mins} ${mins === 1 ? this.t('min') : this.t('mins')}`;
                 },
@@ -766,7 +763,6 @@
                 getETATagClass(etaTime) {
                     const status = this.formatETA(etaTime);
                     const lightSuffix = this.theme === 'light' ? ' is-light' : '';
-                    
                     if (status === this.t('arrived')) return 'is-danger' + lightSuffix;
                     if (status === this.t('arriving')) return 'is-success' + lightSuffix;
                     return this.theme === 'light' ? 'is-light' : 'is-dark';

@@ -18,14 +18,11 @@
                     <div class="navbar-item" style="flex-grow: 1;">
                         <div>
                             <h1 class="title is-4 mb-1" x-text="'🚌 ' + dashboardTitle">🚌 KMB Bus ETA</h1>
-                            <p class="subtitle is-6 mb-0 is-hidden-mobile" x-show="dashboardTitle === t('dashboardTitle')" x-text="t('subtitle')">Real-time arrival information for your routes</p>
+                            <p class="subtitle is-6 mb-0 is-hidden-mobile" x-show="dashboardTitle === t('dashboardTitle')" x-text="t('subtitle')"></p>
                         </div>
                     </div>
                     <div class="navbar-item">
                         <div class="buttons">
-                            <button class="button" @click="toggleLang()" :title="t('toggleLang')">
-                                <span x-text="t('toggleLang')"></span>
-                            </button>
                             <button class="button" @click="openManual()" :title="t('setupHelp')">
                                 <span class="icon">ℹ️</span>
                             </button>
@@ -39,10 +36,10 @@
 
             <div class="is-flex is-justify-content-space-between is-align-items-center mb-4" x-show="selectedUser && !showManual" x-cloak>
                 <div class="has-text-grey is-size-7">
-                    <span x-text="t('refreshIn')">Refresh in:</span> <span class="has-text-weight-bold" x-text="countdown"></span>s
+                    <span x-text="t('refreshIn')"></span> <span class="has-text-weight-bold" x-text="countdown"></span>s
                 </div>
                 <div class="has-text-grey is-size-7">
-                    <span x-text="t('updated')">Updated:</span> <span x-text="lastUpdated"></span>
+                    <span x-text="t('updated')"></span> <span x-text="lastUpdated"></span>
                 </div>
             </div>
 
@@ -50,98 +47,105 @@
             <div x-show="selectedUser && !showManual" x-cloak>
                 <template x-for="stopGroup in getGroupedStops()" :key="stopGroup.originalIds.join('-')">
                     <div class="card mb-5" :id="stopGroup.originalIds.join('-')">
-                        <header class="card-header is-clickable" @click="moveGroupToTop(stopGroup)" title="Move to top">
-                            <p class="card-header-title">
+                        <header class="card-header is-clickable" :class="theme === 'light' ? 'has-background-white-bis' : 'has-background-black-ter'" @click="moveGroupToTop(stopGroup)" title="Move to top">
+                            <p class="card-header-title" :class="theme === 'light' ? 'has-text-grey-dark' : 'has-text-grey-light'">
+                                <span class="icon mr-2">📍</span>
                                 <span x-text="stopGroup.name"></span>
                             </p>
-                            <button class="card-header-icon" aria-label="more options">
-                                <span class="icon">📍</span>
-                            </button>
+                            <div class="card-header-icon" @click.stop="stopGroup.filterOpen = !stopGroup.filterOpen">
+                                <span class="tag is-rounded is-small mr-2" :class="stopGroup.stops[0].routes.length > 0 ? 'is-primary' : (theme === 'dark' ? 'is-dark' : 'is-light')" x-text="stopGroup.stops[0].routes.length || t('allRoutes')"></span>
+                                <span class="icon">🏷️</span>
+                                <span class="icon is-small ml-1" x-text="stopGroup.filterOpen ? '▼' : '▶'"></span>
+                            </div>
                         </header>
                         <div class="card-content px-5 py-3">
-                            <!-- Route Filter for this station -->
-                            <div class="mb-3 is-flex is-align-items-center is-flex-wrap-wrap" x-data="{ expandedTags: false }">
-                                <span class="is-size-7 has-text-grey mr-2" x-text="t('filter')">Filter:</span>
-                                <div class="tags are-small">
-                                    <template x-for="stop in stopGroup.stops" :key="getStopId(stop)">
-                                        <template x-for="route in getAvailableRoutesForStop(stop)" :key="route">
-                                            <span class="tag is-clickable filter-chip" 
-                                                  x-show="expandedTags || (stop.routes && stop.routes.includes(route.toUpperCase())) || getAvailableRoutesForStop(stop).length <= 3"
-                                                  :class="isRouteActiveForStop(route, stop) ? 'is-primary' : 'is-light is-outlined'"
-                                                  @click="toggleRouteFilterForStop(route, stop)"
-                                                  x-text="route">
-                                            </span>
-                                        </template>
+                            <!-- New Route Filter (Tag List) -->
+                            <div x-show="stopGroup.filterOpen" x-transition x-cloak class="mb-3 p-2 border-radius" :class="theme === 'dark' ? 'has-background-dark' : 'has-background-light'">
+                                <div class="is-flex is-justify-content-flex-end mb-2">
+                                    <div class="buttons are-small mb-0">
+                                        <button class="button is-ghost py-0 px-2 h-auto" @click="stopGroup.stops[0].routes = getAvailableRoutesForStop(stopGroup.stops[0]); updateUrl()" x-text="t('showAll')"></button>
+                                        <button class="button is-ghost py-0 px-2 h-auto" @click="stopGroup.stops[0].routes = []; updateUrl()" x-text="t('hideAll')"></button>
+                                    </div>
+                                </div>
+                                <div class="tags are-medium">
+                                    <template x-for="route in getAvailableRoutesForStop(stopGroup.stops[0])" :key="route">
+                                        <span class="tag is-clickable filter-chip" 
+                                              :class="(stopGroup.stops[0].routes.length === 0 || stopGroup.stops[0].routes.includes(route)) ? 'is-primary' : (theme === 'dark' ? 'is-dark' : 'is-light is-outlined')"
+                                              @click="let r = route; if(stopGroup.stops[0].routes.length === 0) { stopGroup.stops[0].routes = [r]; } else { if(stopGroup.stops[0].routes.includes(r)) stopGroup.stops[0].routes = stopGroup.stops[0].routes.filter(i => i !== r); else stopGroup.stops[0].routes.push(r); }; if(stopGroup.stops[0].routes.length === getAvailableRoutesForStop(stopGroup.stops[0]).length) stopGroup.stops[0].routes = []; updateUrl()"
+                                              x-text="route">
+                                        </span>
                                     </template>
-                                    <span class="tag is-clickable" x-show="!expandedTags && stopGroup.stops.some(s => getAvailableRoutesForStop(s).length > 3)" @click="expandedTags = true">...</span>
                                 </div>
                             </div>
 
                             <div class="table-container">
-                                <table class="table is-fullwidth is-hoverable mb-0">
+                                <table class="table is-fullwidth mb-0">
                                     <thead class="is-hidden-mobile">
                                         <tr>
-                                            <th x-text="t('route')">Route</th>
-                                            <th x-text="t('destination')">Destination</th>
-                                            <th x-text="t('upcomingBuses')">Upcoming Buses</th>
+                                            <th x-text="t('route')"></th>
+                                            <th x-text="t('destination')"></th>
+                                            <th x-text="t('upcomingBuses')"></th>
                                         </tr>
                                     </thead>
-                                    <tbody>
-                                        <template x-for="group in getGroupedETAForStops(stopGroup.stops)" :key="group.route + '_' + group.dest_tc + '_' + group.service_type">
+                                    <template x-for="group in getGroupedETAForStops(stopGroup.stops)" :key="group.route + '_' + group.orig_dest + '_' + group.service_type">
+                                        <tbody style="border-bottom: 1px solid var(--bulma-border-light);">
                                             <tr class="eta-row">
                                                 <td class="is-vcentered">
-                                                    <span class="tag is-link is-medium has-text-weight-bold" x-text="group.route"></span>
+                                                    <span class="tag is-link is-medium has-text-weight-bold is-clickable" 
+                                                          x-text="group.route"
+                                                          @click="toggleRouteStops(group, getStopId(stopGroup.stops[0]))"
+                                                          title="Click to view subsequent stops"></span>
                                                 </td>
                                                 <td class="is-vcentered">
-                                                    <div class="is-size-6 has-text-weight-semibold" x-text="group.dest_tc"></div>
-                                                    <div class="is-size-7 route-dest-en" x-text="group.dest_en"></div>
+                                                    <div class="is-size-6 has-text-weight-semibold" x-text="group.dest"></div>
                                                 </td>
                                                 <td class="is-vcentered">
                                                     <div class="tags are-medium">
                                                         <template x-for="eta in group.etas" :key="eta.eta_seq + '_' + eta.eta">
                                                             <span class="tag" 
                                                                   :class="getETATagClass(eta.eta)"
-                                                                  x-text="formatETA(eta.eta)"
-                                                                  @click="toggleRouteStops(group, eta.stop)"
-                                                                  style="cursor: pointer;">
+                                                                  x-text="formatETA(eta.eta)">
                                                             </span>
                                                         </template>
                                                         <template x-if="group.etas.length === 0">
-                                                            <span class="has-text-grey is-size-7" x-text="t('noData')">No Data</span>
+                                                            <span class="has-text-grey is-size-7" x-text="t('noData')"></span>
                                                         </template>
                                                     </div>
-                                                    <!-- Route Stops Expansion -->
-                                                    <template x-if="expandedRouteKey === (group.route + '_' + group.dest_tc + '_' + group.service_type + '_' + (group.etas[0]?.stop || ''))">
-                                                        <div class="mt-2 p-3 has-background-light has-text-dark is-size-7" style="border-radius: 4px;">
-                                                            <p class="has-text-weight-bold mb-1" x-text="t('subsequentStops')">Subsequent Stops:</p>
-                                                            <template x-if="!routeStops[expandedRouteKey]">
-                                                                <span x-text="t('loadingStops')">Loading stops...</span>
-                                                            </template>
-                                                            <template x-if="routeStops[expandedRouteKey] && routeStops[expandedRouteKey].length === 0">
-                                                                <span x-text="t('endOfRoute')">End of route.</span>
-                                                            </template>
-                                                            <template x-if="routeStops[expandedRouteKey]">
-                                                                <div class="is-flex is-flex-wrap-wrap" style="gap: 4px;">
-                                                                    <template x-for="(s, index) in routeStops[expandedRouteKey]" :key="s.stop">
-                                                                        <span>
-                                                                            <span x-text="s.name" :title="s.code"></span><span x-show="index < routeStops[expandedRouteKey].length - 1"> → </span>
-                                                                        </span>
-                                                                    </template>
-                                                                </div>
+                                                </td>
+                                            </tr>
+                                            <!-- Subsequent Stops Row -->
+                                            <tr x-show="expandedRouteKey === (group.route + '_' + group.orig_dest + '_' + group.service_type + '_' + getStopId(stopGroup.stops[0]))" x-cloak>
+                                                <td colspan="3" class="p-3 is-size-7" :class="theme === 'light' ? 'has-background-white-bis' : 'has-background-dark'" style="border-radius: 0 0 6px 6px;">
+                                                    <template x-if="!routeStops[expandedRouteKey]">
+                                                        <span class="has-text-grey" x-text="t('loadingStops')"></span>
+                                                    </template>
+                                                    <template x-if="routeStops[expandedRouteKey] && routeStops[expandedRouteKey].length === 0">
+                                                        <span class="has-text-grey" x-text="t('endOfRoute')"></span>
+                                                    </template>
+                                                    <template x-if="routeStops[expandedRouteKey]">
+                                                        <div class="is-flex is-flex-wrap-wrap" style="gap: 4px; line-height: 1.8;">
+                                                            <template x-for="(s, index) in routeStops[expandedRouteKey]" :key="s.stop">
+                                                                <span>
+                                                                    <span class="is-clickable" @click="s.showCode = !s.showCode">
+                                                                        <span x-text="s.name" :class="index === 0 ? 'has-text-weight-bold' : ''"></span>
+                                                                        <span class="has-text-grey" x-show="s.showCode" x-text="' (' + s.code + ')'"></span>
+                                                                    </span>
+                                                                    <span class="has-text-grey-light mx-1" x-show="index < routeStops[expandedRouteKey].length - 1">→</span>
+                                                                </span>
                                                             </template>
                                                         </div>
                                                     </template>
                                                 </td>
                                             </tr>
-                                        </template>
-                                        <template x-if="getGroupedETAForStops(stopGroup.stops).length === 0">
+                                        </tbody>
+                                    </template>
+                                    <template x-if="getGroupedETAForStops(stopGroup.stops).length === 0">
+                                        <tbody>
                                             <tr>
-                                                <td colspan="3" class="has-text-centered py-5 has-text-grey" x-text="t('noUpcoming')">
-                                                    No upcoming buses for selected routes.
-                                                </td>
+                                                <td colspan="3" class="has-text-centered py-5 has-text-grey" x-text="t('noUpcoming')"></td>
                                             </tr>
-                                        </template>
-                                    </tbody>
+                                        </tbody>
+                                    </template>
                                 </table>
                             </div>
                         </div>
@@ -153,21 +157,24 @@
             <div class="py-2" x-show="!selectedUser || showManual" x-cloak @keydown.window.escape="if(selectedUser) showManual = false">
                 <div class="box">
                     <div class="is-flex is-align-items-center is-justify-content-space-between mb-4">
-                        <h2 class="title is-4 m-0" x-text="'🚌 ' + t('findStops')">🚌 Setup & Help</h2>
+                        <h2 class="title is-4 m-0" x-text="'🚌 ' + t('findStops')"></h2>
                         <button class="button is-small is-ghost" x-show="selectedUser" @click="showManual = false">
                             <span class="icon">⬅️</span>
-                            <span x-text="t('back')">Back</span>
+                            <span x-text="t('back')"></span>
                         </button>
                     </div>
                         
-                        <!-- Tabs for Search Mode -->
+                        <!-- Tabs for Search Mode & Settings -->
                         <div class="tabs is-small is-boxed mb-4">
                             <ul>
                                 <li :class="searchMode === 'route' ? 'is-active' : ''" @click="searchMode = 'route'">
-                                    <a><span x-text="t('searchByRoute')">Search by Route</span></a>
+                                    <a><span x-text="t('searchByRoute')"></span></a>
                                 </li>
                                 <li :class="searchMode === 'stop' ? 'is-active' : ''" @click="searchMode = 'stop'">
-                                    <a><span x-text="t('searchByStop')">Search by Stop</span></a>
+                                    <a><span x-text="t('searchByStop')"></span></a>
+                                </li>
+                                <li :class="searchMode === 'lang' ? 'is-active' : ''" @click="searchMode = 'lang'">
+                                    <a><span x-text="t('language')"></span></a>
                                 </li>
                             </ul>
                         </div>
@@ -175,33 +182,29 @@
                         <!-- Search by Route -->
                         <div x-show="searchMode === 'route'">
                             <div class="field mb-4" x-show="!selectedRoute">
-                                <label class="label is-small" x-text="t('searchByRoute') + ':'">Search by Route:</label>
+                                <label class="label is-small" x-text="t('searchByRoute') + ':'"></label>
                                 <div class="control has-icons-left">
                                     <input class="input" type="text" :placeholder="t('routeQuery')" x-model="routeSearchQuery">
                                     <span class="icon is-small is-left">🔍</span>
                                 </div>
                             </div>
-
-                            <!-- Route Search Results -->
                             <div class="mb-5" x-show="!selectedRoute && routeSearchQuery.length >= 1">
                                 <div class="panel">
-                                    <p class="panel-heading is-size-7" x-text="t('routeResults')">Route Results</p>
+                                    <p class="panel-heading is-size-7" x-text="t('routeResults')"></p>
                                     <template x-for="r in getFilteredRoutes()" :key="r.route + r.bound + r.service_type">
                                         <a class="panel-block" @click="selectRoute(r)">
                                             <span class="tag is-link mr-2" x-text="r.route"></span>
-                                            <span class="is-size-7" x-text="lang === 'zh' ? r.dest_tc : r.dest_en"></span>
+                                            <span class="is-size-7" x-text="lang === 'en' ? r.dest_en : r.dest_tc"></span>
                                             <span class="tag is-small ml-2" x-text="r.bound === 'O' ? t('outbound') : t('inbound')"></span>
                                         </a>
                                     </template>
                                 </div>
                             </div>
-
-                            <!-- Stops for Selected Route -->
                             <div class="mb-5" x-show="selectedRoute">
                                 <div class="panel">
                                     <p class="panel-heading is-size-7 is-flex is-justify-content-space-between align-items-center">
-                                        <span><span x-text="t('stopsFor')">Stops for</span> <span class="tag is-link" x-text="selectedRoute.route"></span> <span x-text="t('outbound')">to</span> <span x-text="lang === 'zh' ? selectedRoute.dest_tc : selectedRoute.dest_en"></span></span>
-                                        <span class="tag is-clickable" @click="selectedRoute = null" x-text="t('changeRoute')">Change Route</span>
+                                        <span><span x-text="t('stopsFor')"></span> <span class="tag is-link" x-text="selectedRoute.route"></span> <span x-text="t('outbound')"></span> <span x-text="lang === 'en' ? selectedRoute.dest_en : selectedRoute.dest_tc"></span></span>
+                                        <span class="tag is-clickable" @click="selectedRoute = null" x-text="t('changeRoute')"></span>
                                     </p>
                                     <div style="max-height: 300px; overflow-y: auto;">
                                         <template x-for="s in selectedRouteStops" :key="s.stop">
@@ -223,17 +226,15 @@
                         <!-- Search by Name/Stop -->
                         <div x-show="searchMode === 'stop'">
                             <div class="field mb-4">
-                                <label class="label is-small" x-text="t('searchByStop') + ':'">Search by Name or Code:</label>
+                                <label class="label is-small" x-text="t('searchByStop') + ':'"></label>
                                 <div class="control has-icons-left">
                                     <input class="input" type="text" :placeholder="t('stopQuery')" x-model="stopSearchQuery">
                                     <span class="icon is-small is-left">🔍</span>
                                 </div>
                             </div>
-
-                            <!-- Search Results with Checkboxes -->
                             <div class="mb-5" x-show="stopSearchQuery.length >= 2">
                                 <div class="panel">
-                                    <p class="panel-heading is-size-7" x-text="t('stopResults')">Search Results</p>
+                                    <p class="panel-heading is-size-7" x-text="t('stopResults')"></p>
                                     <template x-for="s in getFilteredStops()" :key="s.stop">
                                         <div class="panel-block is-flex is-justify-content-space-between align-items-center">
                                             <label class="is-clickable mb-0 is-flex align-items-center">
@@ -245,55 +246,83 @@
                                             <span class="tag is-info is-light is-clickable" x-text="getStopCode(s)" @click="const code = getStopCode(s); const existing = selectedSearchStops.find(i => i.code === code && i.route === null); if(existing) { selectedSearchStops = selectedSearchStops.filter(i => i !== existing); } else { selectedSearchStops.push({code: code, fullName: s.name_tc, route: null}); }"></span>
                                         </div>
                                     </template>
-                                    <div class="panel-block has-text-grey is-size-7" x-show="getFilteredStops().length === 0" x-text="t('noStopsFound')">
-                                        No stops found matching your search.
-                                    </div>
                                 </div>
+                            </div>
+                        </div>
+
+                        <!-- Language Settings Tab -->
+                        <div x-show="searchMode === 'lang'">
+                            <div class="buttons">
+                                <button class="button is-fullwidth" :class="lang === 'tc' ? 'is-primary' : ''" @click="setLang('tc')">繁體中文 (TC)</button>
+                                <button class="button is-fullwidth" :class="lang === 'sc' ? 'is-primary' : ''" @click="setLang('sc')">简体中文 (SC)</button>
+                                <button class="button is-fullwidth" :class="lang === 'en' ? 'is-primary' : ''" @click="setLang('en')">English (EN)</button>
                             </div>
                         </div>
 
                         <!-- Selected Stops Preview -->
-                        <div class="box mb-5" x-show="selectedSearchStops.length > 0">
-                            <p class="is-size-7 mb-2 has-text-weight-bold" x-text="t('selectedStops')">Selected Stops to Add:</p>
+                        <div class="box mb-5" x-show="selectedSearchStops.length > 0 && searchMode !== 'lang'">
+                            <p class="is-size-7 mb-2 has-text-weight-bold" x-text="t('selectedStops')"></p>
                             <div class="tags is-centered">
                                 <template x-for="item in selectedSearchStops" :key="item.code + (item.route || '')">
-                                    <span class="tag is-primary is-flex is-flex-direction-column is-align-items-center py-2 px-3" style="height: auto; min-width: 120px;">
-                                        <div class="is-flex is-align-items-center is-justify-content-center w-100" style="width: 100%;">
+                                    <span class="tag is-primary is-flex is-flex-direction-column is-align-items-center py-2 px-3 h-auto min-width-100">
+                                        <div class="is-flex is-align-items-center is-justify-content-center w-100">
                                             <span class="has-text-weight-bold is-size-7" x-text="item.fullName"></span>
                                             <button class="delete is-small ml-2" @click.stop="selectedSearchStops = selectedSearchStops.filter(i => i !== item)"></button>
                                         </div>
-                                        <div class="is-size-7 mt-0" style="opacity: 0.9;" x-text="item.route || t('allRoutes')"></div>
+                                        <div class="is-size-7 mt-0 opacity-09" x-text="item.route || t('allRoutes')"></div>
                                     </span>
                                 </template>
                             </div>
-
                             <div class="field mt-4">
-                                <label class="label is-small" x-text="t('customTitle')">Custom Dashboard Title (Optional):</label>
+                                <label class="label is-small" x-text="t('customTitle')"></label>
                                 <div class="control">
                                     <input class="input" type="text" :placeholder="t('customTitleHint')" x-model="dashboardTitleInput">
                                 </div>
                             </div>
-
-                            <button class="button is-link is-fullwidth mt-3" @click="createLinkFromSelection()" x-text="t('loadStops')">
-                                Load Stops & Create Link
-                            </button>
+                            <button class="button is-link is-fullwidth mt-3" @click="createLinkFromSelection()" x-text="t('loadStops')"></button>
                         </div>
 
                         <hr>
 
-                        <h2 class="title is-5 mt-5" x-text="t('howToUse')">📖 How to Use</h2>
+                        <h2 class="title is-5 mt-5" x-text="t('howToUse')"></h2>
+                        
+                        <!-- Dynamic Instructions based on searchMode -->
                         <div class="content">
-                            <ol>
-                                <li x-text="t('step1')"><strong>Add Stops:</strong> Use the search box above to find and add stops to your dashboard.</li>
-                                <li x-text="t('step2')"><strong>Filter Routes:</strong> Click the route tags (e.g., 290A) to show only those buses. Click ... to see all routes at a stop.</li>
-                                <li x-text="t('step3')"><strong>Share & Custom Links:</strong> The URL updates automatically, so you can just bookmark it!</li>
-                            </ol>
+                            <div x-show="searchMode === 'route'">
+                                <p class="has-text-weight-bold" x-text="t('instr_route_title')"></p>
+                                <ul>
+                                    <li x-text="t('instr_route_step1')"></li>
+                                    <li x-text="t('instr_route_step2')"></li>
+                                    <li x-text="t('instr_route_step3')"></li>
+                                </ul>
+                            </div>
+                            <div x-show="searchMode === 'stop'">
+                                <p class="has-text-weight-bold" x-text="t('instr_stop_title')"></p>
+                                <ul>
+                                    <li x-text="t('instr_stop_step1')"></li>
+                                    <li x-text="t('instr_stop_step2')"></li>
+                                    <li x-text="t('instr_stop_step3')"></li>
+                                </ul>
+                            </div>
+                            <div x-show="searchMode === 'lang'">
+                                <p class="has-text-weight-bold" x-text="t('instr_lang_title')"></p>
+                                <ul>
+                                    <li x-text="t('instr_lang_step1')"></li>
+                                    <li x-text="t('instr_lang_step2')"></li>
+                                    <li x-text="t('instr_lang_step3')"></li>
+                                </ul>
+                            </div>
+                            <div>
+                                <p class="has-text-weight-bold" x-text="t('step3').split('：')[0] + '?'"></p>
+                                <ul>
+                                    <li x-text="t('step3')"></li>
+                                </ul>
+                            </div>
                         </div>
                 </div>
             </div>
         </div>
     </section>
-
     <script src="assets/js/app.js"></script>
 </body>
 </html>
