@@ -1,0 +1,26 @@
+        [x-cloak] { display: none !important; }
+        .eta-row { transition: all 0.3s ease; }
+        .last-updated { font-style: italic; color: #888; }
+        .card.is-focused {
+            outline: 3px solid var(--bulma-primary);
+            outline-offset: 2px;
+            transition: outline 0.5s ease;
+        }
+        /* Prevent iOS zoom on input focus */
+        input, select, textarea {
+            @media (width <= 1024px) {
+                font-size: max(1rem, 16px) !important;
+            }
+        }
+        /* Compact Mobile Styles */
+        @media screen and (max-width: 768px) {
+            .section { padding: 1rem 0.75rem !important; }
+            .card-header-title { padding: 0.5rem 0.75rem !important; }
+            .card-content .px-5 { padding-left: 0.75rem !important; padding-right: 0.75rem !important; }
+            .card-content .py-3 { padding-top: 0.5rem !important; padding-bottom: 0.5rem !important; }
+            .table td, .table th { padding: 0.5rem 0.25rem !important; }
+            .tags.are-medium .tag, .tag.is-medium { font-size: 0.85rem !important; height: 1.75em !important; padding-left: 0.5em !important; padding-right: 0.5em !important; }
+            .tag.px-3 { padding-left: 0.75rem !important; padding-right: 0.75rem !important; }
+            .tag.py-3 { padding-top: 0.5rem !important; padding-bottom: 0.5rem !important; }
+            .route-dest-en { display: none !important; } /* Hide English dest to save vertical space */
+        }
