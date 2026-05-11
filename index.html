@@ -59,7 +59,7 @@
                                     <!-- Stop Code Sub-heading & Filters -->
                                     <div class="px-5 py-3 is-flex is-align-items-center is-justify-content-space-between border-bottom" :class="theme === 'light' ? 'has-background-primary-light' : 'has-background-primary-dark'">
                                         <div class="is-size-7 has-text-weight-bold" :class="theme === 'dark' ? 'has-text-white-ter' : ''">
-                                            Code: <span class="tag" :class="theme === 'light' ? 'is-danger is-light' : 'is-danger is-dark'" x-text="stop.code || getStopId(stop)"></span>
+                                            <span class="mr-2">Code:</span><span class="tag is-warning" x-text="stop.code || getStopId(stop)"></span>
                                         </div>
                                         <div class="tags are-small mb-0 is-align-items-center" x-data="{ expandedTags: false }">
                                             <span class="is-size-7 has-text-weight-bold mr-2" :class="theme === 'dark' ? 'has-text-white-ter' : ''">Filter:</span>
@@ -108,13 +108,9 @@
                                                     <td>
                                                         <div class="tags are-medium">
                                                             <template x-for="eta in group.etas" :key="eta.eta_seq + '_' + eta.eta">
-                                                                <span class="tag is-flex is-flex-direction-column is-align-items-center py-4" 
+                                                                <span class="tag" 
                                                                       :class="getETATagClass(eta.eta)" 
-                                                                      style="height: auto;">
-                                                                    <strong x-text="formatETA(eta.eta)"></strong>
-                                                                    <template x-if="eta.rmk_tc && eta.rmk_tc.trim() !== '' && eta.rmk_tc !== '原定班次'">
-                                                                        <span class="is-size-7 mt-1" :class="getETARemarkClass(eta.eta)" x-text="eta.rmk_tc"></span>
-                                                                    </template>
+                                                                      x-text="formatETA(eta.eta)">
                                                                 </span>
                                                             </template>
                                                         </div>
@@ -994,13 +990,7 @@
                     const status = this.formatETA(etaTime);
                     if (status === 'Arrived') return 'is-danger';
                     if (status === 'Arriving') return 'is-success';
-                    return this.theme === 'light' ? 'is-light' : 'is-dark';
-                },
-
-                getETARemarkClass(etaTime) {
-                    const status = this.formatETA(etaTime);
-                    if (status === 'Arrived' || status === 'Arriving') return 'has-text-white';
-                    return 'has-text-grey';
+                    return 'is-dark';
                 }
             }
         }
