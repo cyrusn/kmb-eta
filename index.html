@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="viewport" content="width=device-width, initial-scale=0.8">
     <title>KMB Bus ETA Dashboard</title>
     <!-- Bulma CSS for styling -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@1.0.4/css/bulma.min.css">
@@ -105,7 +105,7 @@
                                                         <div class="is-size-6 has-text-weight-semibold" x-text="group.dest_tc"></div>
                                                         <div class="is-size-7" x-text="group.dest_en"></div>
                                                     </td>
-                                                    <td>
+                                                    <td class="is-vcentered">
                                                         <div class="tags are-medium">
                                                             <template x-for="eta in group.etas" :key="eta.eta_seq + '_' + eta.eta">
                                                                 <span class="tag" 
@@ -988,9 +988,11 @@
 
                 getETATagClass(etaTime) {
                     const status = this.formatETA(etaTime);
-                    if (status === 'Arrived') return 'is-danger';
-                    if (status === 'Arriving') return 'is-success';
-                    return 'is-dark';
+                    const lightSuffix = this.theme === 'light' ? ' is-light' : '';
+                    
+                    if (status === 'Arrived') return 'is-danger' + lightSuffix;
+                    if (status === 'Arriving') return 'is-success' + lightSuffix;
+                    return this.theme === 'light' ? 'is-light' : 'is-dark';
                 }
             }
         }
