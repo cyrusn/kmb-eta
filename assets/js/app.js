@@ -408,7 +408,10 @@
                         const newSelection = [];
                         this.selectedUser.stops.forEach(s => {
                             const stopId = this.getStopId(s);
-                            const fullName = this.stopNames[stopId] || s.code || s.id;
+                            let fullName = s.code || s.id;
+                            if (this.stopNames[stopId]) {
+                                fullName = this.stopNames[stopId][this.lang] || this.stopNames[stopId].zh;
+                            }
                             const code = s.code || s.id;
                             
                             if (s.routes && s.routes.length > 0) {
@@ -615,7 +618,10 @@
                     
                     // First check if we already have it in stopDataMap
                     if (this.stopDataMap[stopId]) {
-                        this.stopNames[stopId] = this.stopDataMap[stopId].name_tc;
+                        this.stopNames[stopId] = {
+                            zh: this.stopDataMap[stopId].name_tc,
+                            en: this.stopDataMap[stopId].name_en
+                        };
                         return;
                     }
 
@@ -623,7 +629,10 @@
                         const resp = await fetch(`https://data.etabus.gov.hk/v1/transport/kmb/stop/${stopId}`);
                         const json = await resp.json();
                         if (json.data) {
-                            this.stopNames[stopId] = json.data.name_tc;
+                            this.stopNames[stopId] = {
+                                zh: json.data.name_tc,
+                                en: json.data.name_en
+                            };
                         }
                     } catch (e) {
                         console.error(`Error fetching stop name for ${stopId}`, e);
@@ -632,50 +641,31 @@
 
                 getGroupedStops() {
                     if (!this.selectedUser) return [];
-                    const groups = {};
-                    for (const stop of this.selectedUser.stops) {
+                    return this.selectedUser.stops.map(stop => {
                         const stopId = this.getStopId(stop);
-                        if (!stopId) continue;
+                        if (!stopId) return null;
 
-                        const rawName = this.stopNames[stopId];
-                        let baseName = 'Loading...';
-                        let code = '';
+                        let displayName = 'Loading...';
                         
-                        if (rawName) {
-                            const match = rawName.match(/[\(（](.*?)[\)）]/);
-                            if (match) {
-                                code = match[1].trim();
+                        if (this.stopNames[stopId]) {
+                            // Support new object format containing both languages
+                            displayName = this.stopNames[stopId][this.lang] || this.stopNames[stopId].zh;
+                        }
+
+                        // Ensure the stop code is always visible in the title
+                        if (displayName !== 'Loading...' && stop.code) {
+                            const codeStr = stop.code.toUpperCase();
+                            if (!displayName.includes(codeStr)) {
+                                displayName = `${displayName} (${codeStr})`;
                             }
-                            // Remove any bracketed text to get the base name
-                            baseName = rawName.replace(/\s*[\(（].*?[\)）]\s*/g, '').trim();
                         }
-                        
-                        if (!groups[baseName]) {
-                            groups[baseName] = {
-                                baseName: baseName,
-                                codes: new Set(),
-                                originalIds: [],
-                                stops: []
-                            };
-                        }
-                        if (code) {
-                            groups[baseName].codes.add(code);
-                        }
-                        groups[baseName].originalIds.push(stopId);
-                        groups[baseName].stops.push(stop);
-                    }
-                    
-                    const result = Object.values(groups);
-                    result.forEach(group => {
-                        if (group.codes.size > 0) {
-                            const codesArray = Array.from(group.codes);
-                            group.name = `${group.baseName} (${codesArray.join(', ')})`;
-                        } else {
-                            group.name = group.baseName;
-                        }
-                    });
-                    
-                    return result;
+
+                        return {
+                            originalIds: [stopId],
+                            name: displayName,
+                            stops: [stop]
+                        };
+                    }).filter(Boolean);
                 },
 
                 getGroupedETAForStops(stops) {
